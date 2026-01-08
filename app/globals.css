@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Configuración de dark mode para Tailwind v4 */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -12,11 +15,16 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Modo claro (por defecto) */
+html:not(.dark) {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+/* Modo oscuro */
+html.dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
 }
 
 body {
