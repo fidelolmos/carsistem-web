@@ -1,4 +1,4 @@
-import { getAccessToken } from './auth';
+import { getAccessToken, clearTokens } from './auth';
 import { refreshSession } from './authApi';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -40,16 +40,62 @@ export async function apiFetch<T>(
       await refreshSession();
       return apiFetch<T>(path, options, false);
     } catch {
+      // Si el refresh falla, el token expiró completamente
+      // Limpiar tokens y redirigir al login
+      clearTokens();
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
+      const err: ApiError = {
+        message: 'Sesión expirada. Por favor, inicia sesión nuevamente.',
+        status: 401,
+      };
+      throw err;
     }
+  }
+
+  // Si recibimos 401 después de intentar refrescar (retry = false), también redirigir
+  if (res.status === 401 && !retry) {
+    clearTokens();
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login';
+    }
+    const err: ApiError = {
+      message: 'Sesión expirada. Por favor, inicia sesión nuevamente.',
+      status: 401,
+    };
+    throw err;
   }
 
   if (!res.ok) {
     const details = await parseErrorDetails(res);
+    
+    // Intentar extraer un mensaje más descriptivo del error
+    let errorMessage = 'Error en la solicitud';
+    
+    if (details && typeof details === 'object') {
+      const detailsObj = details as { message?: string; error?: string; [key: string]: unknown };
+      if (detailsObj.message && typeof detailsObj.message === 'string') {
+        errorMessage = detailsObj.message;
+      } else if (detailsObj.error && typeof detailsObj.error === 'string') {
+        errorMessage = detailsObj.error;
+      }
+    } else if (typeof details === 'string') {
+      errorMessage = details;
+    }
+    
     const err: ApiError = {
-      message: 'Error en la solicitud',
+      message: errorMessage,
       status: res.status,
       details,
     };
+    
+    console.error(`API Error ${res.status}:`, {
+      message: errorMessage,
+      details,
+      url: `${API_URL}${path}`,
+    });
+    
     throw err;
   }
 

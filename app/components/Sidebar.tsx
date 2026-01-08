@@ -9,6 +9,7 @@ import {
   Users,
   FileText,
   Settings,
+  UserCircle,
 } from 'lucide-react';
 
 type MenuItem = {
@@ -22,6 +23,7 @@ const menuItems: MenuItem[] = [
   { name: 'Sucursales', href: '/sucursales', icon: Building2 },
   { name: 'Agendar Citas', href: '/agendar-citas', icon: Calendar },
   { name: 'Usuarios y Roles', href: '/usuarios-y-roles', icon: Users },
+  { name: 'Clientes y Vehículos', href: '/clientes', icon: UserCircle },
   { name: 'Reportes', href: '/reportes', icon: FileText },
   { name: 'Configuración', href: '/configuracion', icon: Settings },
 ];
@@ -37,8 +39,11 @@ export default function Sidebar() {
           {menuItems.map((item) => {
             const Icon = item.icon;
             // Para Dashboard, verificar si pathname es exactamente '/' o está vacío
+            // Para Clientes, también verificar si empieza con /clientes
             const isActive = item.href === '/' 
               ? pathname === '/' || pathname === ''
+              : item.href === '/clientes'
+              ? pathname === '/clientes' || pathname.startsWith('/clientes/')
               : pathname === item.href;
             
             return (
