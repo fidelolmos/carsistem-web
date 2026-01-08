@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { Moon, Sun } from 'lucide-react';
 
 export default function ThemeToggle() {
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -68,11 +69,12 @@ export default function ThemeToggle() {
                    bg-white/70 hover:bg-white
                    dark:bg-zinc-900/70 dark:hover:bg-zinc-900
                    border-gray-200 dark:border-zinc-700
-                   text-gray-700 dark:text-zinc-200"
+                   text-gray-700 dark:text-zinc-200
+                   flex items-center justify-center"
         aria-label="Cambiar tema"
         disabled
       >
-        ☾
+        <Moon size={16} strokeWidth={1.9} className="opacity-90" />
       </button>
     );
   }
@@ -84,11 +86,16 @@ export default function ThemeToggle() {
                  bg-white/70 hover:bg-white
                  dark:bg-zinc-900/70 dark:hover:bg-zinc-900
                  border-gray-200 dark:border-zinc-700
-                 text-gray-700 dark:text-zinc-200"
+                 text-gray-700 dark:text-zinc-200
+                 flex items-center justify-center"
       aria-label="Cambiar tema"
       title={isDarkMode ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
     >
-      {isDarkMode ? "☀︎" : "☾"}
+      {isDarkMode ? (
+        <Sun size={16} strokeWidth={1.9} className="opacity-90" />
+      ) : (
+        <Moon size={16} strokeWidth={1.9} className="opacity-90" />
+      )}
     </button>
   );
 }
