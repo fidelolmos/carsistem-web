@@ -32,11 +32,15 @@ export default function Sidebar() {
   return (
     <aside className="fixed left-0 top-0 h-screen w-60 bg-white dark:bg-zinc-900 border-r border-gray-200 dark:border-zinc-800 flex flex-col transition-colors duration-300 z-40">
       {/* Navigation Menu */}
-      <nav className="flex-1 overflow-y-auto py-4 sidebar-nav">
+      <nav className="flex-1 overflow-y-auto pt-20 pb-4">
         <ul className="space-y-1 px-3">
           {menuItems.map((item) => {
             const Icon = item.icon;
-            const isActive = pathname === item.href;
+            // Para Dashboard, verificar si pathname es exactamente '/' o está vacío
+            const isActive = item.href === '/' 
+              ? pathname === '/' || pathname === ''
+              : pathname === item.href;
+            
             return (
               <li key={item.href}>
                 <Link
@@ -52,7 +56,7 @@ export default function Sidebar() {
                     strokeWidth={1.9}
                     className={isActive ? 'text-white opacity-90' : 'text-gray-500 opacity-90'}
                   />
-                  <span className="text-sm font-medium">{item.name}</span>
+                  <span className={isActive ? 'sidebar-item-active' : 'sidebar-item'}>{item.name}</span>
                 </Link>
               </li>
             );

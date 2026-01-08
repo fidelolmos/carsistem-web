@@ -11,8 +11,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-inter);
 }
 
 /* Modo claro (por defecto) */
@@ -30,7 +29,76 @@ html.dark {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter), system-ui, sans-serif;
+}
+
+/* ============================================
+   SISTEMA TIPOGRÁFICO - JERARQUÍAS SEMÁNTICAS
+   ============================================ */
+
+/* Título Principal (H1) - Ej: "Gestión de Sucursales" */
+.title-primary {
+  @apply text-2xl font-semibold text-gray-900 dark:text-white;
+  letter-spacing: -0.01em;
+  line-height: 1.33;
+}
+
+/* Subtítulo / Descripción */
+.subtitle {
+  @apply text-sm font-normal text-gray-500 dark:text-gray-400;
+  line-height: 1.5;
+}
+
+/* Título de Cards - Ej: "Carsistem Centro" */
+.card-title {
+  @apply text-base font-semibold text-gray-900 dark:text-white;
+  line-height: 1.5;
+}
+
+/* Labels / Metadata - Ej: "Gerente", "Ingresos mensuales" */
+.label {
+  @apply text-sm font-normal text-gray-500 dark:text-gray-400;
+  line-height: 1.43;
+}
+
+.label-medium {
+  @apply text-sm font-medium text-gray-500 dark:text-gray-400;
+  line-height: 1.43;
+}
+
+/* Valores Importantes - Ej: "$1,248,500" */
+.value-primary {
+  @apply text-lg font-semibold text-gray-900 dark:text-white;
+  line-height: 1.33;
+}
+
+/* Sidebar Items */
+.sidebar-item {
+  @apply text-sm font-medium text-gray-600 dark:text-gray-300;
+  line-height: 1.43;
+}
+
+.sidebar-item-active {
+  @apply text-sm font-medium text-white;
+  line-height: 1.43;
+}
+
+/* Texto de cuerpo - Default */
+.body-text {
+  @apply text-sm font-normal text-gray-700 dark:text-gray-300;
+  line-height: 1.5;
+}
+
+/* Badge / Status */
+.badge {
+  @apply text-xs font-semibold;
+  line-height: 1.33;
+}
+
+/* Button Text */
+.button-text {
+  @apply text-sm font-semibold;
+  line-height: 1.43;
 }
 
 /* Estilos personalizados para componentes de layout */
