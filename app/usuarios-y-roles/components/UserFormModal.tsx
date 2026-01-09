@@ -2,7 +2,11 @@
 
 import { useState, FormEvent, useEffect } from "react";
 import { X, Eye, EyeOff } from "lucide-react";
-import type { User, UserCreateRequest, UserUpdateRequest } from "@/src/lib/types/user";
+import type {
+  User,
+  UserCreateRequest,
+  UserUpdateRequest,
+} from "@/src/lib/types/user";
 import type { Branch } from "@/src/lib/types/branch";
 
 type UserFormModalProps = {
@@ -66,7 +70,9 @@ export default function UserFormModal({
     status: "active",
   });
 
-  const [errors, setErrors] = useState<Partial<Record<keyof typeof formData, string>>>({});
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof typeof formData, string>>
+  >({});
   const [showPassword, setShowPassword] = useState(false);
 
   // Cargar datos cuando se abre el modal para editar
@@ -224,14 +230,17 @@ export default function UserFormModal({
         const details = (error as { details?: unknown }).details;
         if (details && typeof details === "object") {
           const detailsObj = details as { [key: string]: unknown };
-          const fieldErrors: Partial<Record<keyof typeof formData, string>> = {};
+          const fieldErrors: Partial<Record<keyof typeof formData, string>> =
+            {};
           Object.keys(detailsObj).forEach((key) => {
             if (key in formData) {
               const errorValue = detailsObj[key];
               if (typeof errorValue === "string") {
                 fieldErrors[key as keyof typeof formData] = errorValue;
               } else if (Array.isArray(errorValue) && errorValue.length > 0) {
-                fieldErrors[key as keyof typeof formData] = String(errorValue[0]);
+                fieldErrors[key as keyof typeof formData] = String(
+                  errorValue[0]
+                );
               }
             }
           });
@@ -372,7 +381,8 @@ export default function UserFormModal({
               {/* Password */}
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-gray-800 dark:text-zinc-200">
-                  Contraseña {!isEditing && <span className="text-red-500">*</span>}
+                  Contraseña{" "}
+                  {!isEditing && <span className="text-red-500">*</span>}
                   {isEditing && (
                     <span className="text-xs text-gray-500 dark:text-zinc-400 ml-2">
                       (dejar vacío para no cambiar)
@@ -385,7 +395,11 @@ export default function UserFormModal({
                     name="password"
                     value={formData.password}
                     onChange={handleChange}
-                    placeholder={isEditing ? "Nueva contraseña (opcional)" : "Contraseña segura"}
+                    placeholder={
+                      isEditing
+                        ? "Nueva contraseña (opcional)"
+                        : "Contraseña segura"
+                    }
                     className={`w-full rounded-xl bg-gray-100 dark:bg-zinc-800 border px-4 py-3 pr-10 text-sm text-gray-900 dark:text-zinc-100 placeholder-gray-500 dark:placeholder-zinc-400 outline-none focus:bg-white dark:focus:bg-zinc-700 focus:ring-4 transition-colors ${
                       errors.password
                         ? "border-red-500 dark:border-red-400 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-100 dark:focus:ring-red-900/30"
@@ -464,7 +478,10 @@ export default function UserFormModal({
                 >
                   <option value="">Selecciona una sucursal</option>
                   {branches.map((branch) => {
-                    const branchId = (branch as Branch & { _id?: string })._id || branch.id || "";
+                    const branchId =
+                      (branch as Branch & { _id?: string })._id ||
+                      branch.id ||
+                      "";
                     return (
                       <option key={branchId} value={branchId}>
                         {branch.name}
@@ -576,8 +593,10 @@ export default function UserFormModal({
                   </svg>
                   {isEditing ? "Guardando..." : "Creando..."}
                 </>
+              ) : isEditing ? (
+                "Guardar Cambios"
               ) : (
-                isEditing ? "Guardar Cambios" : "Crear Usuario"
+                "Crear Usuario"
               )}
             </button>
           </div>

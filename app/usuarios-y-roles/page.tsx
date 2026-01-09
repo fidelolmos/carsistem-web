@@ -129,9 +129,7 @@ export default function UsuariosRolesPage() {
     const filtered = users.filter((user) => {
       const branch = branches.find((b) => {
         const branchWithId = b as Branch & { _id?: string };
-        return (
-          branchWithId._id === user.branch_id || b.id === user.branch_id
-        );
+        return branchWithId._id === user.branch_id || b.id === user.branch_id;
       });
 
       return (
@@ -259,7 +257,8 @@ export default function UsuariosRolesPage() {
         }
 
         if (
-          errorMessage === "Error desconocido. Por favor, intenta nuevamente." &&
+          errorMessage ===
+            "Error desconocido. Por favor, intenta nuevamente." &&
           apiErr.message
         ) {
           errorMessage = apiErr.message;
@@ -454,7 +453,10 @@ export default function UsuariosRolesPage() {
             ) : filteredUsers.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <div className="p-4 rounded-full bg-gray-100 dark:bg-zinc-800 mb-4">
-                  <Users size={48} className="text-gray-400 dark:text-zinc-500" />
+                  <Users
+                    size={48}
+                    className="text-gray-400 dark:text-zinc-500"
+                  />
                 </div>
                 <h3 className="card-title mb-2">
                   {searchTerm
@@ -609,7 +611,9 @@ export default function UsuariosRolesPage() {
               <Tag size={48} className="text-gray-400 dark:text-zinc-500" />
             </div>
             <h3 className="card-title mb-2">Funcionalidad en desarrollo</h3>
-            <p className="label">La gestión de roles estará disponible próximamente</p>
+            <p className="label">
+              La gestión de roles estará disponible próximamente
+            </p>
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -617,7 +621,9 @@ export default function UsuariosRolesPage() {
               <Lock size={48} className="text-gray-400 dark:text-zinc-500" />
             </div>
             <h3 className="card-title mb-2">Funcionalidad en desarrollo</h3>
-            <p className="label">La gestión de permisos estará disponible próximamente</p>
+            <p className="label">
+              La gestión de permisos estará disponible próximamente
+            </p>
           </div>
         )}
 
@@ -724,30 +730,33 @@ export default function UsuariosRolesPage() {
                       </span>
                     </p>
                   </div>
-                  {viewingUser.permissions && viewingUser.permissions.length > 0 && (
-                    <div className="col-span-2">
-                      <label className="text-sm font-semibold text-gray-500 dark:text-zinc-400">
-                        Permisos
-                      </label>
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {viewingUser.permissions.map((permission, index) => (
-                          <span
-                            key={index}
-                            className="inline-flex px-2 py-1 text-xs font-medium rounded-md bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
-                          >
-                            {permission}
-                          </span>
-                        ))}
+                  {viewingUser.permissions &&
+                    viewingUser.permissions.length > 0 && (
+                      <div className="col-span-2">
+                        <label className="text-sm font-semibold text-gray-500 dark:text-zinc-400">
+                          Permisos
+                        </label>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {viewingUser.permissions.map((permission, index) => (
+                            <span
+                              key={index}
+                              className="inline-flex px-2 py-1 text-xs font-medium rounded-md bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
+                            >
+                              {permission}
+                            </span>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
                   {viewingUser.last_login_at && (
                     <div>
                       <label className="text-sm font-semibold text-gray-500 dark:text-zinc-400">
                         Último inicio de sesión
                       </label>
                       <p className="text-sm text-gray-900 dark:text-white mt-1">
-                        {new Date(viewingUser.last_login_at).toLocaleString("es-MX")}
+                        {new Date(viewingUser.last_login_at).toLocaleString(
+                          "es-MX"
+                        )}
                       </p>
                     </div>
                   )}
@@ -757,7 +766,9 @@ export default function UsuariosRolesPage() {
                         Fecha de creación
                       </label>
                       <p className="text-sm text-gray-900 dark:text-white mt-1">
-                        {new Date(viewingUser.created_at).toLocaleDateString("es-MX")}
+                        {new Date(viewingUser.created_at).toLocaleDateString(
+                          "es-MX"
+                        )}
                       </p>
                     </div>
                   )}
