@@ -1,5 +1,6 @@
-import { apiFetch } from './api';
 import { getRefreshToken, saveTokens, clearTokens } from './auth';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 type ApiBase<T> = {
   ok: boolean;
@@ -16,19 +17,31 @@ export async function refreshSession() {
   const refreshToken = getRefreshToken();
   if (!refreshToken) throw new Error('No hay refresh_token');
 
-  const res = await apiFetch<ApiBase<RefreshData>>('/auth/refresh', {
+  // Usar fetch directamente para evitar bucle infinito con apiFetch
+  const res = await fetch(`${API_URL}/auth/refresh`, {
     method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'accept': '*/*',
+    },
     body: JSON.stringify({ refresh_token: refreshToken }),
   });
 
-  if (!res.ok) throw new Error(res.message || 'Refresh falló');
+  if (!res.ok) {
+    const details = await res.json().catch(() => ({ message: 'Error al refrescar sesión' }));
+    throw new Error(details.message || 'Refresh falló');
+  }
+
+  const data = await res.json() as ApiBase<RefreshData>;
+
+  if (!data.ok) throw new Error(data.message || 'Refresh falló');
 
   saveTokens({
-    accessToken: res.data.access_token,
-    refreshToken: res.data.refresh_token,
+    accessToken: data.data.access_token,
+    refreshToken: data.data.refresh_token,
   });
 
-  return res.data;
+  return data.data;
 }
 
 export async function logoutSession() {
