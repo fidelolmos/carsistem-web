@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { usePathname } from 'next/navigation';
-import Link from 'next/link';
+import { usePathname } from "next/navigation";
+import Link from "next/link";
 import {
   LayoutGrid,
   Building2,
@@ -10,7 +10,7 @@ import {
   FileText,
   Settings,
   UserCircle,
-} from 'lucide-react';
+} from "lucide-react";
 
 type MenuItem = {
   name: string;
@@ -19,13 +19,13 @@ type MenuItem = {
 };
 
 const menuItems: MenuItem[] = [
-  { name: 'Dashboard', href: '/', icon: LayoutGrid },
-  { name: 'Sucursales', href: '/sucursales', icon: Building2 },
-  { name: 'Agendar Citas', href: '/agendar-citas', icon: Calendar },
-  { name: 'Usuarios y Roles', href: '/usuarios-y-roles', icon: Users },
-  { name: 'Clientes y Vehículos', href: '/clientes', icon: UserCircle },
-  { name: 'Reportes', href: '/reportes', icon: FileText },
-  { name: 'Configuración', href: '/configuracion', icon: Settings },
+  { name: "Dashboard", href: "/", icon: LayoutGrid },
+  { name: "Sucursales", href: "/sucursales", icon: Building2 },
+  { name: "Agendar Citas", href: "/citas", icon: Calendar },
+  { name: "Usuarios y Roles", href: "/usuarios-y-roles", icon: Users },
+  { name: "Clientes y Vehículos", href: "/clientes", icon: UserCircle },
+  { name: "Reportes", href: "/reportes", icon: FileText },
+  { name: "Configuración", href: "/configuracion", icon: Settings },
 ];
 
 export default function Sidebar() {
@@ -39,29 +39,45 @@ export default function Sidebar() {
           {menuItems.map((item) => {
             const Icon = item.icon;
             // Para Dashboard, verificar si pathname es exactamente '/' o está vacío
-            // Para Clientes, también verificar si empieza con /clientes
-            const isActive = item.href === '/' 
-              ? pathname === '/' || pathname === ''
-              : item.href === '/clientes'
-              ? pathname === '/clientes' || pathname.startsWith('/clientes/')
-              : pathname === item.href;
-            
+            // Para Clientes, Citas y Usuarios, también verificar si empieza con la ruta
+            const isActive =
+              item.href === "/"
+                ? pathname === "/" || pathname === ""
+                : item.href === "/clientes"
+                ? pathname === "/clientes" || pathname.startsWith("/clientes/")
+                : item.href === "/citas"
+                ? pathname === "/citas" || pathname.startsWith("/citas/")
+                : item.href === "/usuarios-y-roles"
+                ? pathname === "/usuarios-y-roles" ||
+                  pathname.startsWith("/usuarios-y-roles/")
+                : pathname === item.href;
+
             return (
               <li key={item.href}>
                 <Link
                   href={item.href}
                   className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
                     isActive
-                      ? 'bg-blue-600 text-white'
-                      : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-zinc-800'
+                      ? "bg-blue-600 text-white"
+                      : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-zinc-800"
                   }`}
                 >
                   <Icon
                     size={20}
                     strokeWidth={1.9}
-                    className={isActive ? 'text-white opacity-90' : 'text-gray-500 opacity-90'}
+                    className={
+                      isActive
+                        ? "text-white opacity-90"
+                        : "text-gray-500 opacity-90"
+                    }
                   />
-                  <span className={isActive ? 'sidebar-item-active' : 'sidebar-item'}>{item.name}</span>
+                  <span
+                    className={
+                      isActive ? "sidebar-item-active" : "sidebar-item"
+                    }
+                  >
+                    {item.name}
+                  </span>
                 </Link>
               </li>
             );
@@ -71,4 +87,3 @@ export default function Sidebar() {
     </aside>
   );
 }
-
