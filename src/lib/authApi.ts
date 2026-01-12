@@ -1,4 +1,4 @@
-import { getRefreshToken, saveTokens, clearTokens } from './auth';
+import { getRefreshToken, saveTokens, clearTokens } from "./auth";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -15,26 +15,28 @@ type RefreshData = {
 
 export async function refreshSession() {
   const refreshToken = getRefreshToken();
-  if (!refreshToken) throw new Error('No hay refresh_token');
+  if (!refreshToken) throw new Error("No hay refresh_token");
 
   // Usar fetch directamente para evitar bucle infinito con apiFetch
   const res = await fetch(`${API_URL}/auth/refresh`, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
-      'accept': '*/*',
+      "Content-Type": "application/json",
+      accept: "*/*",
     },
     body: JSON.stringify({ refresh_token: refreshToken }),
   });
 
   if (!res.ok) {
-    const details = await res.json().catch(() => ({ message: 'Error al refrescar sesión' }));
-    throw new Error(details.message || 'Refresh falló');
+    const details = await res
+      .json()
+      .catch(() => ({ message: "Error al refrescar sesión" }));
+    throw new Error(details.message || "Refresh falló");
   }
 
-  const data = await res.json() as ApiBase<RefreshData>;
+  const data = (await res.json()) as ApiBase<RefreshData>;
 
-  if (!data.ok) throw new Error(data.message || 'Refresh falló');
+  if (!data.ok) throw new Error(data.message || "Refresh falló");
 
   saveTokens({
     accessToken: data.data.access_token,
@@ -49,12 +51,25 @@ export async function logoutSession() {
 
   try {
     if (refreshToken) {
-      const res = await apiFetch<ApiBase<null>>('/auth/logout', {
-        method: 'POST',
+      // Usar fetch directamente para evitar bucle infinito con apiFetch
+      const res = await fetch(`${API_URL}/auth/logout`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          accept: "*/*",
+        },
         body: JSON.stringify({ refresh_token: refreshToken }),
       });
 
-      if (!res.ok) throw new Error(res.message || 'Logout falló');
+      if (!res.ok) {
+        const details = await res
+          .json()
+          .catch(() => ({ message: "Error al cerrar sesión" }));
+        throw new Error(details.message || "Logout falló");
+      }
+
+      const data = (await res.json()) as ApiBase<null>;
+      if (!data.ok) throw new Error(data.message || "Logout falló");
     }
   } finally {
     clearTokens();

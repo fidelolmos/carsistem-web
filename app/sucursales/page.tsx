@@ -227,19 +227,19 @@ export default function SucursalesPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 transition-colors duration-300">
       <Sidebar />
       <Header />
-      <main className="ml-60 pt-16 p-6">
+      <main className="ml-60 pt-16">
         {/* Header Section */}
-        <div className="mb-6">
-          <h1 className="title-primary">
+        <div className="px-8 pt-8 pb-6">
+          <h1 className="title-primary mb-2">
             Gestión de Sucursales
           </h1>
-          <p className="subtitle mt-1">
+          <p className="subtitle">
             Administra todas las sucursales de la red Carsistem Performance
           </p>
         </div>
 
         {/* Search and Action Bar */}
-        <div className="mb-6 flex flex-col sm:flex-row gap-4 items-center justify-between">
+        <div className="px-8 mb-6 flex flex-col sm:flex-row gap-4 items-center justify-between">
           <div className="relative flex-1 w-full sm:max-w-md">
             <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-zinc-400">
               <Search size={20} />
@@ -267,7 +267,8 @@ export default function SucursalesPage() {
 
         {/* Error Message */}
         {error && (
-          <div className="mb-6 rounded-xl border border-red-500 dark:border-red-400 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-700 dark:text-red-400 flex items-center gap-2">
+          <div className="px-8 mb-6">
+            <div className="rounded-xl border border-red-500 dark:border-red-400 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-700 dark:text-red-400 flex items-center gap-2">
             <svg
               className="w-5 h-5 flex-shrink-0"
               fill="none"
@@ -282,12 +283,13 @@ export default function SucursalesPage() {
               />
             </svg>
             <span>{error}</span>
+            </div>
           </div>
         )}
 
         {/* Loading State */}
         {loading ? (
-          <div className="flex items-center justify-center py-12">
+          <div className="px-8 flex items-center justify-center py-12">
             <div className="flex flex-col items-center gap-4">
               <svg
                 className="animate-spin h-8 w-8 text-blue-600"
@@ -314,7 +316,7 @@ export default function SucursalesPage() {
             </div>
           </div>
         ) : filteredBranches.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
+          <div className="px-8 flex flex-col items-center justify-center py-12 text-center">
             <div className="p-4 rounded-full bg-gray-100 dark:bg-zinc-800 mb-4">
               <Building2 size={48} className="text-gray-400 dark:text-zinc-500" />
             </div>
@@ -341,7 +343,8 @@ export default function SucursalesPage() {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="px-8 pb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredBranches.map((branch, index) => (
               <BranchCard
                 key={branch.id || `branch-${index}`}
@@ -350,6 +353,7 @@ export default function SucursalesPage() {
                 onEdit={() => handleEditBranch(branch)}
               />
             ))}
+            </div>
           </div>
         )}
 
