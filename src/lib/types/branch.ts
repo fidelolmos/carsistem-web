@@ -33,3 +33,8 @@ export type BranchCreateResponse = {
   data: Branch;
 };
 
+export type BranchDeleteResponse = {
+  ok: boolean;
+  message: string;
+  data: null;
+};

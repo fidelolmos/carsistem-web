@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, FormEvent, useEffect } from "react";
-import { X, Upload } from "lucide-react";
-import Image from "next/image";
+import { X, ImageIcon } from "lucide-react";
 import type { BranchCreateRequest, Branch } from "@/src/lib/types/branch";
 
 type BranchFormModalProps = {
@@ -150,19 +149,6 @@ export default function BranchFormModal({
     }
   };
 
-  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // Por ahora, solo guardamos la URL si es una URL, o el nombre del archivo
-      // En producción, deberías subir el archivo a un servicio de almacenamiento
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData((prev) => ({ ...prev, logo: reader.result as string }));
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
   const validate = (): boolean => {
     const newErrors: Partial<Record<keyof BranchCreateRequest, string>> = {};
 
@@ -231,37 +217,29 @@ export default function BranchFormModal({
         fullAddress = formData.address.trim();
       }
 
-      // Construir metadata con todos los campos adicionales
-      let metadataObj: MetadataFields = {};
-      try {
-        metadataObj = formData.metadata.trim()
-          ? JSON.parse(formData.metadata)
-          : {};
-      } catch {
-        metadataObj = {};
+      // Construir metadata solo con los campos especificados: primaryColor, secondaryColor, manager, state, hours
+      const metadataObj: {
+        primaryColor?: string;
+        secondaryColor?: string;
+        manager?: string;
+        state?: string;
+        hours?: string;
+      } = {};
+
+      // Siempre incluir los colores (con valores por defecto si no están definidos)
+      metadataObj.primaryColor = formData.primaryColor || "#2563eb";
+      metadataObj.secondaryColor = formData.secondaryColor || "#3b82f6";
+
+      // Incluir campos opcionales solo si tienen valor
+      if (formData.manager?.trim()) {
+        metadataObj.manager = formData.manager.trim();
       }
-
-      // Actualizar metadata con todos los campos adicionales
-      metadataObj = {
-        ...metadataObj,
-        manager: formData.manager?.trim() || undefined,
-        street: formData.street?.trim() || undefined,
-        city: formData.city?.trim() || undefined,
-        state: formData.state?.trim() || undefined,
-        postalCode: formData.postalCode?.trim() || undefined,
-        hours: formData.hours?.trim() || undefined,
-        logo: formData.logo?.trim() || undefined,
-        primaryColor: formData.primaryColor || "#2563eb",
-        secondaryColor: formData.secondaryColor || "#3b82f6",
-        color: formData.primaryColor || formData.color || "#2563eb", // Mantener compatibilidad
-      };
-
-      // Limpiar campos undefined del metadata
-      Object.keys(metadataObj).forEach((key) => {
-        if (metadataObj[key as keyof MetadataFields] === undefined) {
-          delete metadataObj[key as keyof MetadataFields];
-        }
-      });
+      if (formData.state?.trim()) {
+        metadataObj.state = formData.state.trim();
+      }
+      if (formData.hours?.trim()) {
+        metadataObj.hours = formData.hours.trim();
+      }
 
       const submitData = {
         code: formData.code.trim().toUpperCase(),
@@ -314,7 +292,7 @@ export default function BranchFormModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-zinc-900 rounded-xl shadow-xl w-full max-w-5xl max-h-[95vh] overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 px-6 py-4 flex flex-col gap-1 z-10">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">
@@ -337,50 +315,26 @@ export default function BranchFormModal({
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          {/* Logo de la Sucursal */}
+          {/* Logo de la Sucursal - Funcionalidad en desarrollo */}
           <div className="space-y-2">
             <label className="text-sm font-semibold text-gray-800 dark:text-zinc-200">
               Logo de la Sucursal
             </label>
-            <div className="border-2 border-dashed border-gray-300 dark:border-zinc-700 rounded-xl p-8 text-center">
-              {formData.logo ? (
-                <div className="space-y-4">
-                  <div className="relative max-h-32 mx-auto rounded-lg overflow-hidden">
-                    <Image
-                      src={formData.logo}
-                      alt="Logo de la sucursal"
-                      width={128}
-                      height={128}
-                      className="object-contain max-h-32 mx-auto rounded-lg"
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setFormData((prev) => ({ ...prev, logo: "" }))
-                    }
-                    className="text-sm text-red-600 dark:text-red-400 hover:underline"
-                    disabled={loading}
-                  >
-                    Eliminar logo
-                  </button>
+            <div className="border-2 border-dashed border-gray-300 dark:border-zinc-700 rounded-xl p-12 text-center bg-gray-50 dark:bg-zinc-800/50">
+              <div className="flex flex-col items-center justify-center space-y-4">
+                <div className="w-16 h-16 rounded-full bg-gray-200 dark:bg-zinc-700 flex items-center justify-center">
+                  <ImageIcon className="w-8 h-8 text-gray-400 dark:text-zinc-500" />
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  <p className="text-gray-500 dark:text-zinc-400">Sin logo</p>
-                  <label className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg cursor-pointer transition-colors disabled:opacity-50">
-                    <Upload size={16} />
-                    Subir Imagen
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleLogoChange}
-                      className="hidden"
-                      disabled={loading}
-                    />
-                  </label>
+                <div className="space-y-2">
+                  <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+                    Funcionalidad en desarrollo
+                  </h3>
+                  <p className="text-sm text-gray-500 dark:text-zinc-400 max-w-sm">
+                    La carga de logos estará disponible próximamente. Estamos
+                    evaluando opciones de almacenamiento de imágenes.
+                  </p>
                 </div>
-              )}
+              </div>
             </div>
           </div>
 
@@ -420,7 +374,7 @@ export default function BranchFormModal({
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                placeholder="Sucursal Principal"
+                placeholder="Carsistem Centro"
                 className={`w-full rounded-xl bg-gray-100 dark:bg-zinc-800 border px-4 py-3 text-sm text-gray-900 dark:text-zinc-100 placeholder-gray-500 dark:placeholder-zinc-400 outline-none focus:bg-white dark:focus:bg-zinc-700 focus:ring-4 transition-colors ${
                   errors.name
                     ? "border-red-500 dark:border-red-400 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-100 dark:focus:ring-red-900/30"
@@ -445,7 +399,7 @@ export default function BranchFormModal({
                 name="manager"
                 value={formData.manager || ""}
                 onChange={handleChange}
-                placeholder="Carlos Mendoza"
+                placeholder="Nombre del gerente"
                 className="w-full rounded-xl bg-gray-100 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-700 px-4 py-3 text-sm text-gray-900 dark:text-zinc-100 placeholder-gray-500 dark:placeholder-zinc-400 outline-none focus:bg-white dark:focus:bg-zinc-700 focus:ring-4 focus:border-blue-300 dark:focus:border-blue-500 focus:ring-blue-100 dark:focus:ring-blue-900/30 transition-colors"
                 disabled={loading}
               />
@@ -457,47 +411,54 @@ export default function BranchFormModal({
             <label className="text-sm font-semibold text-gray-800 dark:text-zinc-200">
               Dirección
             </label>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="md:col-span-2">
-                <input
-                  type="text"
-                  name="street"
-                  value={formData.street || ""}
-                  onChange={handleChange}
-                  placeholder="Av. Reforma 123, Col. Centro"
-                  className="w-full rounded-xl bg-gray-100 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-700 px-4 py-3 text-sm text-gray-900 dark:text-zinc-100 placeholder-gray-500 dark:placeholder-zinc-400 outline-none focus:bg-white dark:focus:bg-zinc-700 focus:ring-4 focus:border-blue-300 dark:focus:border-blue-500 focus:ring-blue-100 dark:focus:ring-blue-900/30 transition-colors"
-                  disabled={loading}
-                />
-              </div>
-              <div>
+            <input
+              type="text"
+              name="street"
+              value={formData.street || ""}
+              onChange={handleChange}
+              placeholder="Calle y número"
+              className="w-full rounded-xl bg-gray-100 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-700 px-4 py-3 text-sm text-gray-900 dark:text-zinc-100 placeholder-gray-500 dark:placeholder-zinc-400 outline-none focus:bg-white dark:focus:bg-zinc-700 focus:ring-4 focus:border-blue-300 dark:focus:border-blue-500 focus:ring-blue-100 dark:focus:ring-blue-900/30 transition-colors"
+              disabled={loading}
+            />
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-gray-800 dark:text-zinc-200">
+                  Ciudad
+                </label>
                 <input
                   type="text"
                   name="city"
                   value={formData.city || ""}
                   onChange={handleChange}
-                  placeholder="Ciudad de México"
+                  placeholder="Ciudad"
                   className="w-full rounded-xl bg-gray-100 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-700 px-4 py-3 text-sm text-gray-900 dark:text-zinc-100 placeholder-gray-500 dark:placeholder-zinc-400 outline-none focus:bg-white dark:focus:bg-zinc-700 focus:ring-4 focus:border-blue-300 dark:focus:border-blue-500 focus:ring-blue-100 dark:focus:ring-blue-900/30 transition-colors"
                   disabled={loading}
                 />
               </div>
-              <div>
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-gray-800 dark:text-zinc-200">
+                  Estado
+                </label>
                 <input
                   type="text"
                   name="state"
                   value={formData.state || ""}
                   onChange={handleChange}
-                  placeholder="CDMX"
+                  placeholder="Estado"
                   className="w-full rounded-xl bg-gray-100 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-700 px-4 py-3 text-sm text-gray-900 dark:text-zinc-100 placeholder-gray-500 dark:placeholder-zinc-400 outline-none focus:bg-white dark:focus:bg-zinc-700 focus:ring-4 focus:border-blue-300 dark:focus:border-blue-500 focus:ring-blue-100 dark:focus:ring-blue-900/30 transition-colors"
                   disabled={loading}
                 />
               </div>
-              <div>
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-gray-800 dark:text-zinc-200">
+                  Código Postal
+                </label>
                 <input
                   type="text"
                   name="postalCode"
                   value={formData.postalCode || ""}
                   onChange={handleChange}
-                  placeholder="06000"
+                  placeholder="00000"
                   className="w-full rounded-xl bg-gray-100 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-700 px-4 py-3 text-sm text-gray-900 dark:text-zinc-100 placeholder-gray-500 dark:placeholder-zinc-400 outline-none focus:bg-white dark:focus:bg-zinc-700 focus:ring-4 focus:border-blue-300 dark:focus:border-blue-500 focus:ring-blue-100 dark:focus:ring-blue-900/30 transition-colors"
                   disabled={loading}
                 />
@@ -543,7 +504,7 @@ export default function BranchFormModal({
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                placeholder="centro@carsistem.mx"
+                placeholder="sucursal@carsistem.mx"
                 className={`w-full rounded-xl bg-gray-100 dark:bg-zinc-800 border px-4 py-3 text-sm text-gray-900 dark:text-zinc-100 placeholder-gray-500 dark:placeholder-zinc-400 outline-none focus:bg-white dark:focus:bg-zinc-700 focus:ring-4 transition-colors ${
                   errors.email
                     ? "border-red-500 dark:border-red-400 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-100 dark:focus:ring-red-900/30"
