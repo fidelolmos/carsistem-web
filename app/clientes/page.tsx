@@ -950,7 +950,12 @@ export default function ClientesPage() {
                           const status = getVehicleStatus(vehicle);
                           const statusConfig: Record<
                             string,
-                            { bg: string; text: string; darkBg: string; darkText: string }
+                            {
+                              bg: string;
+                              text: string;
+                              darkBg: string;
+                              darkText: string;
+                            }
                           > = {
                             Activo: {
                               bg: "bg-green-100",
@@ -972,8 +977,7 @@ export default function ClientesPage() {
                             },
                           };
                           const config =
-                            statusConfig[status] ||
-                            statusConfig["Activo"];
+                            statusConfig[status] || statusConfig["Activo"];
                           return (
                             <span
                               className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${config.bg} ${config.text} ${config.darkBg} ${config.darkText}`}
