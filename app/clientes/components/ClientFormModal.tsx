@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useState, FormEvent, useEffect } from 'react';
-import { X } from 'lucide-react';
-import type { ClientCreateRequest, Client } from '@/src/lib/types/client';
+import { useState, FormEvent, useEffect } from "react";
+import { X } from "lucide-react";
+import type { ClientCreateRequest, Client } from "@/src/lib/types/client";
 
 type ClientFormModalProps = {
   isOpen: boolean;
@@ -12,6 +12,12 @@ type ClientFormModalProps = {
   loading?: boolean;
 };
 
+// Tipo local para el formulario que incluye zipcode (sin mayúscula)
+type ClientFormData = Omit<ClientCreateRequest, "zipCode"> & {
+  zipcode: string;
+  legalName?: string; // Para referencia interna, no se envía al endpoint
+};
+
 export default function ClientFormModal({
   isOpen,
   client,
@@ -19,25 +25,30 @@ export default function ClientFormModal({
   onSubmit,
   loading = false,
 }: ClientFormModalProps) {
-  const [clientType, setClientType] = useState<'Empresa' | 'Persona Física'>('Persona Física');
-  const [formData, setFormData] = useState<ClientCreateRequest>({
-    name: '',
-    phone: '',
-    email: '',
-    address: '',
-    city: '',
-    state: '',
-    zipcode: '',
-    preferredContact: 'email',
+  const [clientType, setClientType] = useState<"Empresa" | "Persona Física">(
+    "Persona Física"
+  );
+  const [contactName, setContactName] = useState(""); // Campo que NO se guarda en el endpoint
+  const [formData, setFormData] = useState<ClientFormData>({
+    name: "",
+    phone: "",
+    email: "",
+    address: "",
+    city: "",
+    state: "",
+    zipcode: "",
+    preferredContact: "email",
     isActive: true,
-    legalName: '',
-    taxId: '',
-    taxRegime: '601',
-    cfdiUse: 'G03',
-    billingEmail: '',
+    legalName: "",
+    taxId: "",
+    taxRegime: "602", // Por defecto Persona Física (602)
+    cfdiUse: "G03",
+    billingEmail: "",
   });
 
-  const [errors, setErrors] = useState<Partial<Record<keyof ClientCreateRequest, string>>>({});
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof ClientFormData, string>>
+  >({});
 
   // Cargar datos cuando se abre el modal para editar
   useEffect(() => {
@@ -45,44 +56,48 @@ export default function ClientFormModal({
 
     if (client) {
       // Modo edición: cargar datos del cliente
-      const isCompany = !!(client.legalName && client.legalName.trim() !== '');
-      setClientType(isCompany ? 'Empresa' : 'Persona Física');
-      
+      // Determinar tipo basado en legalName (si existe legalName, es Empresa)
+      const isCompany = !!(client.legalName && client.legalName.trim() !== "");
+      const type = isCompany ? "Empresa" : "Persona Física";
+      setClientType(type);
+
       setFormData({
-        name: client.name || '',
-        phone: client.phone || '',
-        email: client.email || '',
-        address: client.address || '',
-        city: client.city || '',
-        state: client.state || '',
-        zipcode: client.zipcode || '',
-        preferredContact: client.preferredContact || 'email',
+        name: client.name || "",
+        phone: client.phone || "",
+        email: client.email || "",
+        address: client.address || "",
+        city: client.city || "",
+        state: client.state || "",
+        zipcode: client.zipcode || "",
+        preferredContact: client.preferredContact || "email",
         isActive: client.isActive !== undefined ? client.isActive : true,
-        legalName: client.legalName || '',
-        taxId: client.taxId || '',
-        taxRegime: client.taxRegime || '601',
-        cfdiUse: client.cfdiUse || 'G03',
-        billingEmail: client.billingEmail || '',
+        legalName: client.legalName || "", // Mantener para referencia, pero no se usa en el submit
+        taxId: client.taxId || "",
+        taxRegime: client.taxRegime || (type === "Empresa" ? "601" : "602"),
+        cfdiUse: client.cfdiUse || "G03",
+        billingEmail: client.billingEmail || "",
       });
+      setContactName(""); // El nombre del contacto no se guarda, se deja vacío al cargar
     } else {
       // Modo creación: resetear formulario
-      setClientType('Persona Física');
+      setClientType("Persona Física");
       setFormData({
-        name: '',
-        phone: '',
-        email: '',
-        address: '',
-        city: '',
-        state: '',
-        zipcode: '',
-        preferredContact: 'email',
+        name: "",
+        phone: "",
+        email: "",
+        address: "",
+        city: "",
+        state: "",
+        zipcode: "",
+        preferredContact: "email",
         isActive: true,
-        legalName: '',
-        taxId: '',
-        taxRegime: '601',
-        cfdiUse: 'G03',
-        billingEmail: '',
+        legalName: "",
+        taxId: "",
+        taxRegime: "602", // Por defecto Persona Física
+        cfdiUse: "G03",
+        billingEmail: "",
       });
+      setContactName("");
     }
     setErrors({});
   }, [isOpen, client?._id]);
@@ -90,80 +105,90 @@ export default function ClientFormModal({
   if (!isOpen) return null;
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
   ) => {
     const { name, value, type } = e.target;
     const checked = (e.target as HTMLInputElement).checked;
-    
+
     setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value,
+      [name]: type === "checkbox" ? checked : value,
     }));
-    
+
     // Limpiar error del campo cuando el usuario empiece a escribir
-    if (errors[name as keyof ClientCreateRequest]) {
+    if (errors[name as keyof ClientFormData]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
   };
 
-  const handleClientTypeChange = (type: 'Empresa' | 'Persona Física') => {
+  const handleClientTypeChange = (type: "Empresa" | "Persona Física") => {
     setClientType(type);
-    if (type === 'Persona Física') {
-      // Limpiar legalName cuando cambia a Persona Física
-      setFormData((prev) => ({ ...prev, legalName: '' }));
-    }
+    // Establecer régimen fiscal automáticamente según el tipo
+    const regime = type === "Empresa" ? "601" : "602";
+    setFormData((prev) => ({
+      ...prev,
+      taxRegime: regime,
+      legalName: type === "Persona Física" ? "" : prev.legalName,
+    }));
   };
 
   const validate = (): boolean => {
-    const newErrors: Partial<Record<keyof ClientCreateRequest, string>> = {};
+    const newErrors: Partial<Record<keyof ClientFormData, string>> = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = 'El nombre es requerido';
+      newErrors.name = "El nombre es requerido";
     }
 
     if (!formData.phone.trim()) {
-      newErrors.phone = 'El teléfono es requerido';
+      newErrors.phone = "El teléfono es requerido";
     }
 
     if (!formData.email.trim()) {
-      newErrors.email = 'El email es requerido';
+      newErrors.email = "El email es requerido";
     } else {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(formData.email.trim())) {
-        newErrors.email = 'Por favor, ingresa un correo electrónico válido';
+        newErrors.email = "Por favor, ingresa un correo electrónico válido";
       }
     }
 
     if (!formData.address.trim()) {
-      newErrors.address = 'La dirección es requerida';
+      newErrors.address = "La dirección es requerida";
     }
 
     if (!formData.city.trim()) {
-      newErrors.city = 'La ciudad es requerida';
+      newErrors.city = "La ciudad es requerida";
     }
 
     if (!formData.state.trim()) {
-      newErrors.state = 'El estado es requerido';
+      newErrors.state = "El estado es requerido";
     }
 
     if (!formData.zipcode.trim()) {
-      newErrors.zipcode = 'El código postal es requerido';
+      newErrors.zipcode = "El código postal es requerido";
     }
 
-    if (clientType === 'Empresa' && !formData.legalName.trim()) {
-      newErrors.legalName = 'La razón social es requerida para empresas';
+    // Validar según el tipo de cliente
+    if (clientType === "Empresa" && !formData.name.trim()) {
+      newErrors.name = "La razón social es requerida";
+    }
+    if (clientType === "Persona Física" && !formData.name.trim()) {
+      newErrors.name = "El nombre completo es requerido";
     }
 
     if (!formData.taxId.trim()) {
-      newErrors.taxId = 'El RFC es requerido';
+      newErrors.taxId = "El RFC es requerido";
     }
 
     if (!formData.billingEmail.trim()) {
-      newErrors.billingEmail = 'El email de facturación es requerido';
+      newErrors.billingEmail = "El email de facturación es requerido";
     } else {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(formData.billingEmail.trim())) {
-        newErrors.billingEmail = 'Por favor, ingresa un correo electrónico válido';
+        newErrors.billingEmail =
+          "Por favor, ingresa un correo electrónico válido";
       }
     }
 
@@ -173,14 +198,14 @@ export default function ClientFormModal({
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    
+
     if (!validate()) {
       return;
     }
 
     try {
       const submitData: ClientCreateRequest = {
-        name: formData.name.trim(),
+        name: formData.name.trim(), // Razón social para Empresa, Nombre completo para Persona Física
         phone: formData.phone.trim(),
         email: formData.email.trim().toLowerCase(),
         address: formData.address.trim(),
@@ -190,36 +215,40 @@ export default function ClientFormModal({
         preferredContact: formData.preferredContact,
         isActive: formData.isActive,
         taxId: formData.taxId.trim().toUpperCase(),
-        taxRegime: formData.taxRegime,
+        taxRegime: formData.taxRegime, // 601 para Empresa, 602 para Persona Física (establecido automáticamente)
         cfdiUse: formData.cfdiUse,
         billingEmail: formData.billingEmail.trim().toLowerCase(),
       };
 
-      // Solo incluir legalName si es empresa y tiene valor
-      if (clientType === 'Empresa' && formData.legalName.trim()) {
-        submitData.legalName = formData.legalName.trim();
-      }
+      // legalName NO se envía al endpoint según las especificaciones del usuario
 
-      console.log('Datos del formulario antes de enviar:', JSON.stringify(submitData, null, 2));
+      console.log(
+        "Datos del formulario antes de enviar:",
+        JSON.stringify(submitData, null, 2)
+      );
       await onSubmit(submitData);
       setErrors({});
     } catch (error) {
-      console.error('Error en handleSubmit del modal:', error);
+      console.error("Error en handleSubmit del modal:", error);
       // El error se maneja en el componente padre
       // Pero podemos mostrar errores de validación específicos aquí si es necesario
-      if (error && typeof error === 'object' && 'details' in error) {
+      if (error && typeof error === "object" && "details" in error) {
         const details = (error as { details?: unknown }).details;
-        if (details && typeof details === 'object') {
+        if (details && typeof details === "object") {
           const detailsObj = details as { [key: string]: unknown };
           // Si hay errores de validación por campo, mostrarlos
-          const fieldErrors: Partial<Record<keyof ClientCreateRequest, string>> = {};
+          const fieldErrors: Partial<Record<keyof ClientFormData, string>> = {};
           Object.keys(detailsObj).forEach((key) => {
-            if (key in formData) {
+            // Mapear zipCode del error a zipcode del formulario
+            const formKey = key === "zipCode" ? "zipcode" : key;
+            if (formKey in formData) {
               const errorValue = detailsObj[key];
-              if (typeof errorValue === 'string') {
-                fieldErrors[key as keyof ClientCreateRequest] = errorValue;
+              if (typeof errorValue === "string") {
+                fieldErrors[formKey as keyof ClientFormData] = errorValue;
               } else if (Array.isArray(errorValue) && errorValue.length > 0) {
-                fieldErrors[key as keyof ClientCreateRequest] = String(errorValue[0]);
+                fieldErrors[formKey as keyof ClientFormData] = String(
+                  errorValue[0]
+                );
               }
             }
           });
@@ -234,22 +263,23 @@ export default function ClientFormModal({
   const handleClose = () => {
     if (!loading) {
       setFormData({
-        name: '',
-        phone: '',
-        email: '',
-        address: '',
-        city: '',
-        state: '',
-        zipcode: '',
-        preferredContact: 'email',
+        name: "",
+        phone: "",
+        email: "",
+        address: "",
+        city: "",
+        state: "",
+        zipcode: "",
+        preferredContact: "email",
         isActive: true,
-        legalName: '',
-        taxId: '',
-        taxRegime: '601',
-        cfdiUse: 'G03',
-        billingEmail: '',
+        legalName: "",
+        taxId: "",
+        taxRegime: "602",
+        cfdiUse: "G03",
+        billingEmail: "",
       });
-      setClientType('Persona Física');
+      setClientType("Persona Física");
+      setContactName("");
       setErrors({});
       onClose();
     }
@@ -263,7 +293,7 @@ export default function ClientFormModal({
         {/* Header */}
         <div className="sticky top-0 bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 px-6 py-4 flex items-center justify-between z-10">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-            {isEditing ? 'Editar Cliente' : 'Alta de Cliente'}
+            {isEditing ? "Editar Cliente" : "Alta de Cliente"}
           </h2>
           <button
             onClick={handleClose}
@@ -288,24 +318,28 @@ export default function ClientFormModal({
                   type="radio"
                   name="clientType"
                   value="Empresa"
-                  checked={clientType === 'Empresa'}
-                  onChange={() => handleClientTypeChange('Empresa')}
+                  checked={clientType === "Empresa"}
+                  onChange={() => handleClientTypeChange("Empresa")}
                   disabled={loading}
                   className="w-4 h-4 text-blue-600"
                 />
-                <span className="text-sm text-gray-900 dark:text-white">Empresa</span>
+                <span className="text-sm text-gray-900 dark:text-white">
+                  Empresa
+                </span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="radio"
                   name="clientType"
                   value="Persona Física"
-                  checked={clientType === 'Persona Física'}
-                  onChange={() => handleClientTypeChange('Persona Física')}
+                  checked={clientType === "Persona Física"}
+                  onChange={() => handleClientTypeChange("Persona Física")}
                   disabled={loading}
                   className="w-4 h-4 text-blue-600"
                 />
-                <span className="text-sm text-gray-900 dark:text-white">Persona Física</span>
+                <span className="text-sm text-gray-900 dark:text-white">
+                  Persona Física
+                </span>
               </label>
             </div>
           </div>
@@ -316,52 +350,52 @@ export default function ClientFormModal({
               Información del Cliente
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Razón Social (solo para empresas) */}
-              {clientType === 'Empresa' && (
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-gray-800 dark:text-zinc-200">
-                    Razón Social <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="legalName"
-                    value={formData.legalName}
-                    onChange={handleChange}
-                    placeholder="Empresa S.A. de C.V."
-                    className={`w-full rounded-xl bg-gray-100 dark:bg-zinc-800 border px-4 py-3 text-sm text-gray-900 dark:text-zinc-100 placeholder-gray-500 dark:placeholder-zinc-400 outline-none focus:bg-white dark:focus:bg-zinc-700 focus:ring-4 transition-colors ${
-                      errors.legalName
-                        ? 'border-red-500 dark:border-red-400 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-100 dark:focus:ring-red-900/30'
-                        : 'border-gray-100 dark:border-zinc-700 focus:border-blue-300 dark:focus:border-blue-500 focus:ring-blue-100 dark:focus:ring-blue-900/30'
-                    }`}
-                    disabled={loading}
-                  />
-                  {errors.legalName && (
-                    <p className="text-sm text-red-600 dark:text-red-400">{errors.legalName}</p>
-                  )}
-                </div>
-              )}
-
-              {/* Nombre del Contacto */}
+              {/* Razón Social / Nombre Completo (según tipo) */}
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-gray-800 dark:text-zinc-200">
-                  Nombre del Contacto <span className="text-red-500">*</span>
+                  {clientType === "Empresa"
+                    ? "Razón Social"
+                    : "Nombre Completo"}{" "}
+                  <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
-                  placeholder="Juan Pérez"
+                  placeholder={
+                    clientType === "Empresa"
+                      ? "Empresa S.A. de C.V."
+                      : "Juan Pérez García"
+                  }
                   className={`w-full rounded-xl bg-gray-100 dark:bg-zinc-800 border px-4 py-3 text-sm text-gray-900 dark:text-zinc-100 placeholder-gray-500 dark:placeholder-zinc-400 outline-none focus:bg-white dark:focus:bg-zinc-700 focus:ring-4 transition-colors ${
                     errors.name
-                      ? 'border-red-500 dark:border-red-400 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-100 dark:focus:ring-red-900/30'
-                      : 'border-gray-100 dark:border-zinc-700 focus:border-blue-300 dark:focus:border-blue-500 focus:ring-blue-100 dark:focus:ring-blue-900/30'
+                      ? "border-red-500 dark:border-red-400 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-100 dark:focus:ring-red-900/30"
+                      : "border-gray-100 dark:border-zinc-700 focus:border-blue-300 dark:focus:border-blue-500 focus:ring-blue-100 dark:focus:ring-blue-900/30"
                   }`}
                   disabled={loading}
                 />
                 {errors.name && (
-                  <p className="text-sm text-red-600 dark:text-red-400">{errors.name}</p>
+                  <p className="text-sm text-red-600 dark:text-red-400">
+                    {errors.name}
+                  </p>
                 )}
+              </div>
+
+              {/* Nombre del Contacto (no se guarda en el endpoint) */}
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-gray-800 dark:text-zinc-200">
+                  Nombre del Contacto
+                </label>
+                <input
+                  type="text"
+                  name="contactName"
+                  value={contactName}
+                  onChange={(e) => setContactName(e.target.value)}
+                  placeholder="Carlos Mendoza"
+                  className="w-full rounded-xl bg-gray-100 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-700 px-4 py-3 text-sm text-gray-900 dark:text-zinc-100 placeholder-gray-500 dark:placeholder-zinc-400 outline-none focus:bg-white dark:focus:bg-zinc-700 focus:ring-4 focus:border-blue-300 dark:focus:border-blue-500 focus:ring-blue-100 dark:focus:ring-blue-900/30 transition-colors"
+                  disabled={loading}
+                />
               </div>
 
               {/* RFC */}
@@ -377,13 +411,15 @@ export default function ClientFormModal({
                   placeholder="ABC123456XYZ"
                   className={`w-full rounded-xl bg-gray-100 dark:bg-zinc-800 border px-4 py-3 text-sm text-gray-900 dark:text-zinc-100 placeholder-gray-500 dark:placeholder-zinc-400 outline-none focus:bg-white dark:focus:bg-zinc-700 focus:ring-4 transition-colors ${
                     errors.taxId
-                      ? 'border-red-500 dark:border-red-400 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-100 dark:focus:ring-red-900/30'
-                      : 'border-gray-100 dark:border-zinc-700 focus:border-blue-300 dark:focus:border-blue-500 focus:ring-blue-100 dark:focus:ring-blue-900/30'
+                      ? "border-red-500 dark:border-red-400 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-100 dark:focus:ring-red-900/30"
+                      : "border-gray-100 dark:border-zinc-700 focus:border-blue-300 dark:focus:border-blue-500 focus:ring-blue-100 dark:focus:ring-blue-900/30"
                   }`}
                   disabled={loading}
                 />
                 {errors.taxId && (
-                  <p className="text-sm text-red-600 dark:text-red-400">{errors.taxId}</p>
+                  <p className="text-sm text-red-600 dark:text-red-400">
+                    {errors.taxId}
+                  </p>
                 )}
               </div>
 
@@ -394,8 +430,13 @@ export default function ClientFormModal({
                 </label>
                 <select
                   name="isActive"
-                  value={formData.isActive ? 'true' : 'false'}
-                  onChange={(e) => setFormData(prev => ({ ...prev, isActive: e.target.value === 'true' }))}
+                  value={formData.isActive ? "true" : "false"}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      isActive: e.target.value === "true",
+                    }))
+                  }
                   className="w-full rounded-xl bg-gray-100 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-700 px-4 py-3 text-sm text-gray-900 dark:text-zinc-100 outline-none focus:bg-white dark:focus:bg-zinc-700 focus:ring-4 focus:border-blue-300 dark:focus:border-blue-500 focus:ring-blue-100 dark:focus:ring-blue-900/30 transition-colors"
                   disabled={loading}
                 >
@@ -417,13 +458,15 @@ export default function ClientFormModal({
                   placeholder="contacto@empresa.com"
                   className={`w-full rounded-xl bg-gray-100 dark:bg-zinc-800 border px-4 py-3 text-sm text-gray-900 dark:text-zinc-100 placeholder-gray-500 dark:placeholder-zinc-400 outline-none focus:bg-white dark:focus:bg-zinc-700 focus:ring-4 transition-colors ${
                     errors.email
-                      ? 'border-red-500 dark:border-red-400 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-100 dark:focus:ring-red-900/30'
-                      : 'border-gray-100 dark:border-zinc-700 focus:border-blue-300 dark:focus:border-blue-500 focus:ring-blue-100 dark:focus:ring-blue-900/30'
+                      ? "border-red-500 dark:border-red-400 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-100 dark:focus:ring-red-900/30"
+                      : "border-gray-100 dark:border-zinc-700 focus:border-blue-300 dark:focus:border-blue-500 focus:ring-blue-100 dark:focus:ring-blue-900/30"
                   }`}
                   disabled={loading}
                 />
                 {errors.email && (
-                  <p className="text-sm text-red-600 dark:text-red-400">{errors.email}</p>
+                  <p className="text-sm text-red-600 dark:text-red-400">
+                    {errors.email}
+                  </p>
                 )}
               </div>
 
@@ -440,13 +483,15 @@ export default function ClientFormModal({
                   placeholder="5551234567"
                   className={`w-full rounded-xl bg-gray-100 dark:bg-zinc-800 border px-4 py-3 text-sm text-gray-900 dark:text-zinc-100 placeholder-gray-500 dark:placeholder-zinc-400 outline-none focus:bg-white dark:focus:bg-zinc-700 focus:ring-4 transition-colors ${
                     errors.phone
-                      ? 'border-red-500 dark:border-red-400 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-100 dark:focus:ring-red-900/30'
-                      : 'border-gray-100 dark:border-zinc-700 focus:border-blue-300 dark:focus:border-blue-500 focus:ring-blue-100 dark:focus:ring-blue-900/30'
+                      ? "border-red-500 dark:border-red-400 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-100 dark:focus:ring-red-900/30"
+                      : "border-gray-100 dark:border-zinc-700 focus:border-blue-300 dark:focus:border-blue-500 focus:ring-blue-100 dark:focus:ring-blue-900/30"
                   }`}
                   disabled={loading}
                 />
                 {errors.phone && (
-                  <p className="text-sm text-red-600 dark:text-red-400">{errors.phone}</p>
+                  <p className="text-sm text-red-600 dark:text-red-400">
+                    {errors.phone}
+                  </p>
                 )}
               </div>
             </div>
@@ -470,13 +515,15 @@ export default function ClientFormModal({
                   placeholder="Calle y número"
                   className={`w-full rounded-xl bg-gray-100 dark:bg-zinc-800 border px-4 py-3 text-sm text-gray-900 dark:text-zinc-100 placeholder-gray-500 dark:placeholder-zinc-400 outline-none focus:bg-white dark:focus:bg-zinc-700 focus:ring-4 transition-colors ${
                     errors.address
-                      ? 'border-red-500 dark:border-red-400 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-100 dark:focus:ring-red-900/30'
-                      : 'border-gray-100 dark:border-zinc-700 focus:border-blue-300 dark:focus:border-blue-500 focus:ring-blue-100 dark:focus:ring-blue-900/30'
+                      ? "border-red-500 dark:border-red-400 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-100 dark:focus:ring-red-900/30"
+                      : "border-gray-100 dark:border-zinc-700 focus:border-blue-300 dark:focus:border-blue-500 focus:ring-blue-100 dark:focus:ring-blue-900/30"
                   }`}
                   disabled={loading}
                 />
                 {errors.address && (
-                  <p className="text-sm text-red-600 dark:text-red-400">{errors.address}</p>
+                  <p className="text-sm text-red-600 dark:text-red-400">
+                    {errors.address}
+                  </p>
                 )}
               </div>
 
@@ -492,13 +539,15 @@ export default function ClientFormModal({
                   placeholder="Ciudad de México"
                   className={`w-full rounded-xl bg-gray-100 dark:bg-zinc-800 border px-4 py-3 text-sm text-gray-900 dark:text-zinc-100 placeholder-gray-500 dark:placeholder-zinc-400 outline-none focus:bg-white dark:focus:bg-zinc-700 focus:ring-4 transition-colors ${
                     errors.city
-                      ? 'border-red-500 dark:border-red-400 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-100 dark:focus:ring-red-900/30'
-                      : 'border-gray-100 dark:border-zinc-700 focus:border-blue-300 dark:focus:border-blue-500 focus:ring-blue-100 dark:focus:ring-blue-900/30'
+                      ? "border-red-500 dark:border-red-400 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-100 dark:focus:ring-red-900/30"
+                      : "border-gray-100 dark:border-zinc-700 focus:border-blue-300 dark:focus:border-blue-500 focus:ring-blue-100 dark:focus:ring-blue-900/30"
                   }`}
                   disabled={loading}
                 />
                 {errors.city && (
-                  <p className="text-sm text-red-600 dark:text-red-400">{errors.city}</p>
+                  <p className="text-sm text-red-600 dark:text-red-400">
+                    {errors.city}
+                  </p>
                 )}
               </div>
 
@@ -514,13 +563,15 @@ export default function ClientFormModal({
                   placeholder="CDMX"
                   className={`w-full rounded-xl bg-gray-100 dark:bg-zinc-800 border px-4 py-3 text-sm text-gray-900 dark:text-zinc-100 placeholder-gray-500 dark:placeholder-zinc-400 outline-none focus:bg-white dark:focus:bg-zinc-700 focus:ring-4 transition-colors ${
                     errors.state
-                      ? 'border-red-500 dark:border-red-400 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-100 dark:focus:ring-red-900/30'
-                      : 'border-gray-100 dark:border-zinc-700 focus:border-blue-300 dark:focus:border-blue-500 focus:ring-blue-100 dark:focus:ring-blue-900/30'
+                      ? "border-red-500 dark:border-red-400 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-100 dark:focus:ring-red-900/30"
+                      : "border-gray-100 dark:border-zinc-700 focus:border-blue-300 dark:focus:border-blue-500 focus:ring-blue-100 dark:focus:ring-blue-900/30"
                   }`}
                   disabled={loading}
                 />
                 {errors.state && (
-                  <p className="text-sm text-red-600 dark:text-red-400">{errors.state}</p>
+                  <p className="text-sm text-red-600 dark:text-red-400">
+                    {errors.state}
+                  </p>
                 )}
               </div>
 
@@ -536,13 +587,15 @@ export default function ClientFormModal({
                   placeholder="01000"
                   className={`w-full rounded-xl bg-gray-100 dark:bg-zinc-800 border px-4 py-3 text-sm text-gray-900 dark:text-zinc-100 placeholder-gray-500 dark:placeholder-zinc-400 outline-none focus:bg-white dark:focus:bg-zinc-700 focus:ring-4 transition-colors ${
                     errors.zipcode
-                      ? 'border-red-500 dark:border-red-400 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-100 dark:focus:ring-red-900/30'
-                      : 'border-gray-100 dark:border-zinc-700 focus:border-blue-300 dark:focus:border-blue-500 focus:ring-blue-100 dark:focus:ring-blue-900/30'
+                      ? "border-red-500 dark:border-red-400 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-100 dark:focus:ring-red-900/30"
+                      : "border-gray-100 dark:border-zinc-700 focus:border-blue-300 dark:focus:border-blue-500 focus:ring-blue-100 dark:focus:ring-blue-900/30"
                   }`}
                   disabled={loading}
                 />
                 {errors.zipcode && (
-                  <p className="text-sm text-red-600 dark:text-red-400">{errors.zipcode}</p>
+                  <p className="text-sm text-red-600 dark:text-red-400">
+                    {errors.zipcode}
+                  </p>
                 )}
               </div>
             </div>
@@ -562,11 +615,15 @@ export default function ClientFormModal({
                   type="text"
                   name="taxRegime"
                   value={formData.taxRegime}
-                  onChange={handleChange}
-                  placeholder="601"
-                  className="w-full rounded-xl bg-gray-100 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-700 px-4 py-3 text-sm text-gray-900 dark:text-zinc-100 placeholder-gray-500 dark:placeholder-zinc-400 outline-none focus:bg-white dark:focus:bg-zinc-700 focus:ring-4 focus:border-blue-300 dark:focus:border-blue-500 focus:ring-blue-100 dark:focus:ring-blue-900/30 transition-colors"
-                  disabled={loading}
+                  readOnly
+                  className="w-full rounded-xl bg-gray-100 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-700 px-4 py-3 text-sm text-gray-500 dark:text-zinc-400 outline-none cursor-not-allowed"
+                  disabled
                 />
+                <p className="text-xs text-gray-500 dark:text-zinc-400">
+                  {clientType === "Empresa"
+                    ? "Régimen 601 - General de Ley Personas Morales"
+                    : "Régimen 602 - Personas Físicas con Actividades Empresariales"}
+                </p>
               </div>
 
               <div className="space-y-2">
@@ -596,13 +653,15 @@ export default function ClientFormModal({
                   placeholder="facturacion@empresa.com"
                   className={`w-full rounded-xl bg-gray-100 dark:bg-zinc-800 border px-4 py-3 text-sm text-gray-900 dark:text-zinc-100 placeholder-gray-500 dark:placeholder-zinc-400 outline-none focus:bg-white dark:focus:bg-zinc-700 focus:ring-4 transition-colors ${
                     errors.billingEmail
-                      ? 'border-red-500 dark:border-red-400 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-100 dark:focus:ring-red-900/30'
-                      : 'border-gray-100 dark:border-zinc-700 focus:border-blue-300 dark:focus:border-blue-500 focus:ring-blue-100 dark:focus:ring-blue-900/30'
+                      ? "border-red-500 dark:border-red-400 focus:border-red-500 dark:focus:border-red-400 focus:ring-red-100 dark:focus:ring-red-900/30"
+                      : "border-gray-100 dark:border-zinc-700 focus:border-blue-300 dark:focus:border-blue-500 focus:ring-blue-100 dark:focus:ring-blue-900/30"
                   }`}
                   disabled={loading}
                 />
                 {errors.billingEmail && (
-                  <p className="text-sm text-red-600 dark:text-red-400">{errors.billingEmail}</p>
+                  <p className="text-sm text-red-600 dark:text-red-400">
+                    {errors.billingEmail}
+                  </p>
                 )}
               </div>
 
@@ -658,10 +717,12 @@ export default function ClientFormModal({
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                     />
                   </svg>
-                  {isEditing ? 'Guardando...' : 'Creando...'}
+                  {isEditing ? "Guardando..." : "Creando..."}
                 </>
+              ) : isEditing ? (
+                "Guardar Cambios"
               ) : (
-                isEditing ? 'Guardar Cambios' : 'Crear Cliente'
+                "Crear Cliente"
               )}
             </button>
           </div>
@@ -670,4 +731,3 @@ export default function ClientFormModal({
     </div>
   );
 }
-

@@ -51,4 +51,3 @@ export type ClientCreateResponse = {
   message: string;
   data: Client;
 };
-

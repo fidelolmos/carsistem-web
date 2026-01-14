@@ -76,11 +76,14 @@ export default function ClientesPage() {
       });
 
       if (response.ok && Array.isArray(response.data)) {
-        // Normalizar los clientes para asegurar que tengan id
-        const normalizedClients = response.data.map((client: Client) => ({
-          ...client,
-          id: client.id || client._id,
-        }));
+        // Normalizar los clientes para asegurar que tengan id y zipcode
+        const normalizedClients = response.data.map(
+          (client: Client & { zipCode?: string }) => ({
+            ...client,
+            id: client.id || client._id,
+            zipcode: client.zipcode || client.zipCode || "", // Normalizar zipCode a zipcode
+          })
+        );
 
         setClients(normalizedClients);
         setFilteredClients(normalizedClients);
@@ -986,7 +989,9 @@ export default function ClientesPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-semibold text-gray-500 dark:text-zinc-400">
-                      Nombre
+                      {getClientType(viewingClient) === "Empresa"
+                        ? "Razón Social"
+                        : "Nombre Completo"}
                     </label>
                     <p className="text-sm text-gray-900 dark:text-white mt-1">
                       {viewingClient.name}
@@ -1014,14 +1019,6 @@ export default function ClientesPage() {
                     </label>
                     <p className="text-sm text-gray-900 dark:text-white mt-1">
                       {viewingClient.taxId}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-semibold text-gray-500 dark:text-zinc-400">
-                      Razón Social
-                    </label>
-                    <p className="text-sm text-gray-900 dark:text-white mt-1">
-                      {viewingClient.legalName || "N/A"}
                     </p>
                   </div>
                   <div>
