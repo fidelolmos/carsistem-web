@@ -101,7 +101,7 @@ export default function AppointmentFormModal({
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>(
     {}
   );
-  
+
   // Estado para rastrear qué pasos han sido validados
   const [validatedSteps, setValidatedSteps] = useState<Set<number>>(new Set());
 
@@ -258,38 +258,47 @@ export default function AppointmentFormModal({
     if (showErrors || validatedSteps.has(step)) {
       // Crear nuevo objeto de errores manteniendo solo los errores del paso actual y otros pasos ya validados
       const currentErrors: Partial<Record<keyof FormData, string>> = {};
-      
+
       // Mantener errores de otros pasos que ya fueron validados
       validatedSteps.forEach((validatedStep) => {
         if (validatedStep !== step) {
           // Mantener errores de otros pasos validados
           if (validatedStep === 1) {
             if (errors.branch_id) currentErrors.branch_id = errors.branch_id;
-            if (errors.appointment_date) currentErrors.appointment_date = errors.appointment_date;
-            if (errors.selected_time) currentErrors.selected_time = errors.selected_time;
+            if (errors.appointment_date)
+              currentErrors.appointment_date = errors.appointment_date;
+            if (errors.selected_time)
+              currentErrors.selected_time = errors.selected_time;
           } else if (validatedStep === 2) {
             if (errors.client_id) currentErrors.client_id = errors.client_id;
             if (errors.vehicle_id) currentErrors.vehicle_id = errors.vehicle_id;
-            if (errors.project_name) currentErrors.project_name = errors.project_name;
-            if (errors.appointment_type) currentErrors.appointment_type = errors.appointment_type;
+            if (errors.project_name)
+              currentErrors.project_name = errors.project_name;
+            if (errors.appointment_type)
+              currentErrors.appointment_type = errors.appointment_type;
           } else if (validatedStep === 3) {
             if (errors.advisor_id) currentErrors.advisor_id = errors.advisor_id;
-            if (errors.driver_name) currentErrors.driver_name = errors.driver_name;
-            if (errors.pickup_address) currentErrors.pickup_address = errors.pickup_address;
+            if (errors.driver_name)
+              currentErrors.driver_name = errors.driver_name;
+            if (errors.pickup_address)
+              currentErrors.pickup_address = errors.pickup_address;
           } else if (validatedStep === 4) {
-            if (errors.contact_name) currentErrors.contact_name = errors.contact_name;
-            if (errors.contact_phone) currentErrors.contact_phone = errors.contact_phone;
-            if (errors.contact_email) currentErrors.contact_email = errors.contact_email;
+            if (errors.contact_name)
+              currentErrors.contact_name = errors.contact_name;
+            if (errors.contact_phone)
+              currentErrors.contact_phone = errors.contact_phone;
+            if (errors.contact_email)
+              currentErrors.contact_email = errors.contact_email;
           }
         }
       });
-      
+
       // Agregar errores del paso actual
       Object.assign(currentErrors, newErrors);
-      
+
       setErrors(currentErrors);
     }
-    
+
     return Object.keys(newErrors).length === 0;
   };
 
