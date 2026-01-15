@@ -19,12 +19,12 @@ type UserFormModalProps = {
 };
 
 const ROLES = [
-  { value: "superadmin", label: "Super Admin" },
+  { value: "superadmin", label: "Admin Corporativo" },
   { value: "administrador", label: "Administrador" },
-  { value: "branch admin", label: "Branch Admin" },
-  { value: "workshop manager", label: "Workshop Manager" },
+  { value: "branch admin", label: "Admin Sucursal" },
+  { value: "workshop manager", label: "Jefe de Taller" },
   { value: "mechanic", label: "Mecánico" },
-  { value: "front desk", label: "Front Desk" },
+  { value: "front desk", label: "Asesor" },
 ];
 
 const PERMISSIONS = [
@@ -193,7 +193,8 @@ export default function UserFormModal({
 
     try {
       if (user) {
-        // Actualizar usuario
+        // Actualizar usuario - incluir todos los campos del formulario
+        // (el backend debe manejar cuáles son opcionales)
         const updateData: UserUpdateRequest = {
           username: formData.username.trim(),
           full_name: formData.full_name.trim(),
@@ -208,6 +209,7 @@ export default function UserFormModal({
           updateData.password = formData.password;
         }
 
+        console.log("Datos a actualizar:", updateData);
         await onSubmit(updateData);
       } else {
         // Crear usuario
