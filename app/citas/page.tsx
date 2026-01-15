@@ -357,6 +357,48 @@ export default function CitasPage() {
     return statusMap[status.toLowerCase()] || status;
   };
 
+  // Formatear y truncar tipos de servicio
+  const formatServiceType = (serviceType: string, maxLength: number = 30): string => {
+    if (!serviceType) return "-";
+    
+    // Reemplazar guiones bajos con espacios y capitalizar
+    const formatted = serviceType
+      .split(",")
+      .map((service) => {
+        return service
+          .trim()
+          .replace(/_/g, " ")
+          .split(" ")
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+          .join(" ");
+      })
+      .join(", ");
+    
+    // Truncar si es muy largo
+    if (formatted.length > maxLength) {
+      return formatted.substring(0, maxLength) + "...";
+    }
+    
+    return formatted;
+  };
+
+  // Obtener el texto completo formateado de los servicios
+  const getFullServiceType = (serviceType: string): string => {
+    if (!serviceType) return "-";
+    
+    return serviceType
+      .split(",")
+      .map((service) => {
+        return service
+          .trim()
+          .replace(/_/g, " ")
+          .split(" ")
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+          .join(" ");
+      })
+      .join(", ");
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 transition-colors duration-300">
       <Sidebar />
@@ -496,7 +538,7 @@ export default function CitasPage() {
                     <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-zinc-300 uppercase tracking-wider">
                       Vehículo
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-zinc-300 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-zinc-300 uppercase tracking-wider max-w-xs">
                       Servicio
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-zinc-300 uppercase tracking-wider">
@@ -551,10 +593,13 @@ export default function CitasPage() {
                           {getVehicleInfo(appointment.vehicle_id)}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="text-sm text-gray-900 dark:text-white capitalize">
-                          {appointment.appointment_type}
-                        </span>
+                      <td className="px-6 py-4">
+                        <div 
+                          className="text-sm text-gray-900 dark:text-white max-w-xs truncate"
+                          title={getFullServiceType(appointment.appointment_type)}
+                        >
+                          {formatServiceType(appointment.appointment_type, 40)}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-2">
@@ -694,8 +739,8 @@ export default function CitasPage() {
                     <label className="text-sm font-semibold text-gray-500 dark:text-zinc-400">
                       Tipo de Servicio
                     </label>
-                    <p className="text-sm text-gray-900 dark:text-white mt-1 capitalize">
-                      {viewingAppointment.appointment_type}
+                    <p className="text-sm text-gray-900 dark:text-white mt-1">
+                      {getFullServiceType(viewingAppointment.appointment_type)}
                     </p>
                   </div>
                   <div>
