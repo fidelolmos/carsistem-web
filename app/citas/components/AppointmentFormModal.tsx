@@ -3,7 +3,11 @@
 import { useState, FormEvent, useEffect } from "react";
 import { X, ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { getUserIdFromToken } from "@/src/lib/auth";
-import type { AppointmentCreateRequest } from "@/src/lib/types/appointment";
+import type {
+  Appointment,
+  AppointmentCreateRequest,
+  AppointmentUpdateRequest,
+} from "@/src/lib/types/appointment";
 import type { Branch } from "@/src/lib/types/branch";
 import type { Client } from "@/src/lib/types/client";
 import type { Vehicle } from "@/src/lib/types/vehicle";
@@ -15,6 +19,8 @@ type AppointmentFormModalProps = {
   vehicles: Vehicle[];
   onClose: () => void;
   onSubmit: (data: AppointmentCreateRequest) => Promise<void>;
+  onUpdate?: (id: string, data: AppointmentUpdateRequest) => Promise<void>;
+  appointment?: Appointment | null;
   loading?: boolean;
 };
 
@@ -78,8 +84,11 @@ export default function AppointmentFormModal({
   vehicles,
   onClose,
   onSubmit,
+  onUpdate,
+  appointment = null,
   loading = false,
 }: AppointmentFormModalProps) {
+  const isEditMode = !!appointment;
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<FormData>({
     branch_id: "",
@@ -108,9 +117,75 @@ export default function AppointmentFormModal({
   // Estado para el calendario
   const [calendarDate, setCalendarDate] = useState(new Date());
 
-  // Resetear formulario cuando se abre/cierra
+  // Cargar datos de la cita cuando está en modo edición
   useEffect(() => {
-    if (!isOpen) {
+    if (isOpen && appointment) {
+      setCurrentStep(1);
+      setValidatedSteps(new Set());
+      // Extraer fecha y hora de appointment_date y start_time
+      const appointmentDate = new Date(appointment.appointment_date);
+      const startTime = new Date(appointment.start_time);
+
+      // Formatear fecha como YYYY-MM-DD
+      const dateString = appointmentDate.toISOString().split("T")[0];
+
+      // Formatear hora como HH:MM
+      const timeString = `${String(startTime.getHours()).padStart(
+        2,
+        "0"
+      )}:${String(startTime.getMinutes()).padStart(2, "0")}`;
+
+      // Extraer información de las notes
+      let projectName = "";
+      let driverName = "";
+      let pickupAddress = "";
+      let notes = appointment.notes || "";
+
+      if (notes) {
+        // Buscar "Proyecto: ..."
+        const projectMatch = notes.match(/Proyecto:\s*([^.]*)/i);
+        if (projectMatch) {
+          projectName = projectMatch[1].trim();
+        }
+
+        // Buscar "Conductor: ..."
+        const driverMatch = notes.match(/Conductor:\s*([^.]*)/i);
+        if (driverMatch) {
+          driverName = driverMatch[1].trim();
+        }
+
+        // Buscar "Dirección: ..."
+        const addressMatch = notes.match(/Dirección:\s*(.*)/i);
+        if (addressMatch) {
+          pickupAddress = addressMatch[1].trim();
+        }
+      }
+
+      // Establecer el calendario en la fecha de la cita
+      setCalendarDate(appointmentDate);
+
+      setFormData({
+        branch_id: appointment.branch_id || "",
+        appointment_date: dateString,
+        selected_time: timeString,
+        client_id: appointment.client_id || "",
+        vehicle_id: appointment.vehicle_id || "",
+        project_name: projectName,
+        appointment_type: appointment.appointment_type || "",
+        advisor_id: appointment.advisor_id || "",
+        driver_name: driverName,
+        pickup_address: pickupAddress,
+        contact_name: "", // Estos campos no están en la cita, se dejan vacíos
+        contact_phone: "",
+        contact_email: "",
+        notes: notes,
+      });
+    }
+  }, [isOpen, appointment]);
+
+  // Resetear formulario cuando se abre/cierra (solo en modo creación)
+  useEffect(() => {
+    if (!isOpen && !appointment) {
       setCurrentStep(1);
       setFormData({
         branch_id: "",
@@ -132,7 +207,7 @@ export default function AppointmentFormModal({
       setValidatedSteps(new Set());
       setCalendarDate(new Date());
     }
-  }, [isOpen]);
+  }, [isOpen, appointment]);
 
   if (!isOpen) return null;
 
@@ -379,30 +454,56 @@ export default function AppointmentFormModal({
         .filter(Boolean)
         .join(", "); // Volver a concatenar con comas
 
-      const submitData: AppointmentCreateRequest = {
-        appointment_date: appointmentDateTime.toISOString(),
-        client_id: clientId,
-        vehicle_id: vehicleId,
-        appointment_type: repairTypes,
-        notes:
-          formData.notes ||
-          `Proyecto: ${formData.project_name}. Conductor: ${formData.driver_name}. Dirección: ${formData.pickup_address}`,
-        branch_id: branchId,
-        user_id: userId,
-        created_by: userId,
-        assigned_to: userId,
-        advisor_id: formData.advisor_id || userId, // Si no hay advisor_id, usar el userId como fallback
-        start_time: appointmentDateTime.toISOString(),
-        end_time: endDateTime.toISOString(),
-        estimated_duration: 60,
-        status: "programado",
-      };
+      if (isEditMode && appointment && onUpdate) {
+        // Modo edición: usar PATCH
+        const updateData: AppointmentUpdateRequest = {
+          appointment_date: appointmentDateTime.toISOString(),
+          client_id: clientId,
+          vehicle_id: vehicleId,
+          appointment_type: repairTypes,
+          notes:
+            formData.notes ||
+            `Proyecto: ${formData.project_name}. Conductor: ${formData.driver_name}. Dirección: ${formData.pickup_address}`,
+          branch_id: branchId,
+          advisor_id: formData.advisor_id || appointment.advisor_id,
+          start_time: appointmentDateTime.toISOString(),
+          end_time: endDateTime.toISOString(),
+          estimated_duration: 60,
+        };
 
-      console.log(
-        "Datos a enviar al crear cita:",
-        JSON.stringify(submitData, null, 2)
-      );
-      await onSubmit(submitData);
+        const appointmentId = appointment._id || appointment.id || "";
+        console.log(
+          "Datos a enviar al actualizar cita:",
+          JSON.stringify(updateData, null, 2)
+        );
+        await onUpdate(appointmentId, updateData);
+      } else {
+        // Modo creación: usar POST
+        const submitData: AppointmentCreateRequest = {
+          appointment_date: appointmentDateTime.toISOString(),
+          client_id: clientId,
+          vehicle_id: vehicleId,
+          appointment_type: repairTypes,
+          notes:
+            formData.notes ||
+            `Proyecto: ${formData.project_name}. Conductor: ${formData.driver_name}. Dirección: ${formData.pickup_address}`,
+          branch_id: branchId,
+          user_id: userId,
+          created_by: userId,
+          assigned_to: userId,
+          advisor_id: formData.advisor_id || userId, // Si no hay advisor_id, usar el userId como fallback
+          start_time: appointmentDateTime.toISOString(),
+          end_time: endDateTime.toISOString(),
+          estimated_duration: 60,
+          status: "programado",
+        };
+
+        console.log(
+          "Datos a enviar al crear cita:",
+          JSON.stringify(submitData, null, 2)
+        );
+        await onSubmit(submitData);
+      }
       setErrors({});
     } catch (error) {
       console.error("Error en handleSubmit del modal:", error);
@@ -566,7 +667,8 @@ export default function AppointmentFormModal({
         {/* Header */}
         <div className="sticky top-0 bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 px-6 py-4 flex items-center justify-between z-10">
           <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-            Nueva Cita - Paso {currentStep} de 4
+            {isEditMode ? "Editar Cita" : "Nueva Cita"} - Paso {currentStep} de
+            4
           </h2>
           <button
             onClick={handleClose}
@@ -1253,12 +1355,12 @@ export default function AppointmentFormModal({
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                       />
                     </svg>
-                    Creando...
+                    {isEditMode ? "Actualizando..." : "Creando..."}
                   </>
                 ) : (
                   <>
                     <Check size={18} />
-                    Confirmar Cita
+                    {isEditMode ? "Actualizar Cita" : "Confirmar Cita"}
                   </>
                 )}
               </button>

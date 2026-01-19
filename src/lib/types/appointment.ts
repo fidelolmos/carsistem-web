@@ -51,3 +51,11 @@ export type AppointmentCreateResponse = {
   message: string;
   data: Appointment;
 };
+
+export type AppointmentUpdateRequest = Partial<AppointmentCreateRequest>;
+
+export type AppointmentUpdateResponse = {
+  ok: boolean;
+  message: string;
+  data: Appointment;
+};

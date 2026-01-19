@@ -2,7 +2,15 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Search, Plus, Eye, Calendar, Clock, MapPin } from "lucide-react";
+import {
+  Search,
+  Plus,
+  Eye,
+  Calendar,
+  Clock,
+  MapPin,
+  Pencil,
+} from "lucide-react";
 import { getAccessToken } from "@/src/lib/auth";
 import { apiFetch } from "@/src/lib/api";
 import type {
@@ -10,6 +18,8 @@ import type {
   AppointmentsResponse,
   AppointmentCreateRequest,
   AppointmentCreateResponse,
+  AppointmentUpdateRequest,
+  AppointmentUpdateResponse,
 } from "@/src/lib/types/appointment";
 import type { Branch } from "@/src/lib/types/branch";
 import type { Client } from "@/src/lib/types/client";
@@ -30,6 +40,8 @@ export default function CitasPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingAppointment, setEditingAppointment] =
+    useState<Appointment | null>(null);
   const [formLoading, setFormLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [viewingAppointment, setViewingAppointment] =
@@ -210,6 +222,98 @@ export default function CitasPage() {
     setViewingAppointment(appointment);
   };
 
+  // Editar cita
+  const handleEditAppointment = (appointment: Appointment) => {
+    setEditingAppointment(appointment);
+    setIsModalOpen(true);
+    setError(null);
+  };
+
+  // Editar cita
+  const handleUpdateAppointment = async (
+    id: string,
+    data: AppointmentUpdateRequest
+  ) => {
+    try {
+      setFormLoading(true);
+      setError(null);
+
+      const response = await apiFetch<AppointmentUpdateResponse>(
+        `/appointments/${id}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify(data),
+        }
+      );
+
+      if (response && response.ok && response.data) {
+        await fetchAppointments();
+        setIsModalOpen(false);
+        setEditingAppointment(null);
+        setError(null);
+      } else {
+        const message = response?.message || "Error al actualizar la cita";
+        throw new Error(message);
+      }
+    } catch (err) {
+      console.error("Error al actualizar cita:", err);
+
+      let errorMessage = "Error desconocido. Por favor, intenta nuevamente.";
+
+      if (err instanceof Error) {
+        errorMessage = err.message;
+      } else if (err && typeof err === "object") {
+        const apiErr = err as {
+          message?: string;
+          status?: number;
+          details?: unknown;
+        };
+
+        if (apiErr.details) {
+          if (typeof apiErr.details === "object") {
+            const details = apiErr.details as {
+              message?: string;
+              error?: string;
+              [key: string]: unknown;
+            };
+
+            if (details.message && typeof details.message === "string") {
+              errorMessage = details.message;
+            } else if (details.error && typeof details.error === "string") {
+              errorMessage = details.error;
+            }
+          } else if (typeof apiErr.details === "string") {
+            errorMessage = apiErr.details;
+          }
+        }
+
+        if (
+          errorMessage ===
+            "Error desconocido. Por favor, intenta nuevamente." &&
+          apiErr.message
+        ) {
+          errorMessage = apiErr.message;
+        }
+
+        if (apiErr.status && errorMessage) {
+          errorMessage = `Error ${apiErr.status}: ${errorMessage}`;
+        }
+      }
+
+      if (
+        errorMessage === "Error desconocido. Por favor, intenta nuevamente."
+      ) {
+        errorMessage =
+          "Error al actualizar la cita. Por favor, intenta nuevamente.";
+      }
+
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setFormLoading(false);
+    }
+  };
+
   // Crear cita
   const handleSubmitAppointment = async (data: AppointmentCreateRequest) => {
     try {
@@ -329,38 +433,64 @@ export default function CitasPage() {
   };
 
   const getStatusColor = (status: string): string => {
+    const normalizedStatus = status.toLowerCase().trim();
     const statusMap: Record<string, string> = {
+      // Estados programados/pendientes - Azul
       programado:
-        "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400",
+        "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 border border-blue-200 dark:border-blue-800",
+      pendiente:
+        "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 border border-blue-200 dark:border-blue-800",
+      // Estados confirmados - Verde
       confirmada:
-        "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+        "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800",
+      confirmado:
+        "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800",
+      // Estados en servicio - Verde
       "en servicio":
-        "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+        "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800",
+      en_servicio:
+        "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800",
+      // Estados completados - Púrpura
       completada:
-        "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
-      cancelada: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+        "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400 border border-purple-200 dark:border-purple-800",
+      completado:
+        "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400 border border-purple-200 dark:border-purple-800",
+      // Estados cancelados - Rojo
+      cancelada:
+        "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800",
+      cancelado:
+        "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800",
     };
     return (
-      statusMap[status.toLowerCase()] ||
-      "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400"
+      statusMap[normalizedStatus] ||
+      "bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400 border border-gray-200 dark:border-gray-800"
     );
   };
 
   const getStatusLabel = (status: string): string => {
+    const normalizedStatus = status.toLowerCase().trim();
     const statusMap: Record<string, string> = {
       programado: "Pendiente",
+      pendiente: "Pendiente",
       confirmada: "Confirmada",
+      confirmado: "Confirmado",
       "en servicio": "En Servicio",
+      en_servicio: "En Servicio",
       completada: "Completada",
+      completado: "Completado",
       cancelada: "Cancelada",
+      cancelado: "Cancelado",
     };
-    return statusMap[status.toLowerCase()] || status;
+    return statusMap[normalizedStatus] || status;
   };
 
   // Formatear y truncar tipos de servicio
-  const formatServiceType = (serviceType: string, maxLength: number = 30): string => {
+  const formatServiceType = (
+    serviceType: string,
+    maxLength: number = 30
+  ): string => {
     if (!serviceType) return "-";
-    
+
     // Reemplazar guiones bajos con espacios y capitalizar
     const formatted = serviceType
       .split(",")
@@ -369,23 +499,25 @@ export default function CitasPage() {
           .trim()
           .replace(/_/g, " ")
           .split(" ")
-          .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+          .map(
+            (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+          )
           .join(" ");
       })
       .join(", ");
-    
+
     // Truncar si es muy largo
     if (formatted.length > maxLength) {
       return formatted.substring(0, maxLength) + "...";
     }
-    
+
     return formatted;
   };
 
   // Obtener el texto completo formateado de los servicios
   const getFullServiceType = (serviceType: string): string => {
     if (!serviceType) return "-";
-    
+
     return serviceType
       .split(",")
       .map((service) => {
@@ -393,7 +525,9 @@ export default function CitasPage() {
           .trim()
           .replace(/_/g, " ")
           .split(" ")
-          .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+          .map(
+            (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+          )
           .join(" ");
       })
       .join(", ");
@@ -428,6 +562,7 @@ export default function CitasPage() {
           </div>
           <button
             onClick={() => {
+              setEditingAppointment(null);
               setIsModalOpen(true);
               setError(null);
             }}
@@ -505,6 +640,7 @@ export default function CitasPage() {
             {!searchTerm && (
               <button
                 onClick={() => {
+                  setEditingAppointment(null);
                   setIsModalOpen(true);
                   setError(null);
                 }}
@@ -594,9 +730,11 @@ export default function CitasPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <div 
+                        <div
                           className="text-sm text-gray-900 dark:text-white max-w-xs truncate"
-                          title={getFullServiceType(appointment.appointment_type)}
+                          title={getFullServiceType(
+                            appointment.appointment_type
+                          )}
                         >
                           {formatServiceType(appointment.appointment_type, 40)}
                         </div>
@@ -624,6 +762,13 @@ export default function CitasPage() {
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex items-center justify-end gap-2">
                           <button
+                            onClick={() => handleEditAppointment(appointment)}
+                            className="p-2 text-gray-400 hover:text-green-600 dark:hover:text-green-400 rounded-lg transition-colors"
+                            aria-label="Editar cita"
+                          >
+                            <Pencil size={18} />
+                          </button>
+                          <button
                             onClick={() => handleViewAppointment(appointment)}
                             className="p-2 text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg transition-colors"
                             aria-label="Ver cita"
@@ -648,9 +793,12 @@ export default function CitasPage() {
           vehicles={vehicles}
           onClose={() => {
             setIsModalOpen(false);
+            setEditingAppointment(null);
             setError(null);
           }}
           onSubmit={handleSubmitAppointment}
+          onUpdate={handleUpdateAppointment}
+          appointment={editingAppointment}
           loading={formLoading}
         />
 
