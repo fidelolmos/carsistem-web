@@ -11,6 +11,7 @@ import {
   Users,
   Tag,
   Lock,
+  Shield,
 } from "lucide-react";
 import { getAccessToken } from "@/src/lib/auth";
 import { apiFetch } from "@/src/lib/api";
@@ -174,12 +175,22 @@ export default function UsuariosRolesPage() {
           throw new Error("El usuario no tiene un ID válido para actualizar");
         }
 
+        // Asegurar que permissions sea siempre un array (incluso si está vacío)
+        const cleanedData: UserUpdateRequest = { ...data };
+        if (!cleanedData.permissions) {
+          cleanedData.permissions = [];
+        }
+
+        console.log("Actualizando usuario - ID:", userId);
+        console.log("Datos a enviar:", cleanedData);
+        console.log("URL:", `/users/${userId}`);
+
         // Actualizar usuario existente
         const response = await apiFetch<UserCreateResponse>(
           `/users/${userId}`,
           {
             method: "PATCH",
-            body: JSON.stringify(data),
+            body: JSON.stringify(cleanedData),
           }
         );
 
@@ -211,6 +222,10 @@ export default function UsuariosRolesPage() {
       }
     } catch (err) {
       console.error("Error al guardar usuario:", err);
+      console.error("Detalles del error:", {
+        message: err instanceof Error ? err.message : String(err),
+        error: err,
+      });
 
       let errorMessage = "Error desconocido. Por favor, intenta nuevamente.";
 
@@ -303,14 +318,43 @@ export default function UsuariosRolesPage() {
 
   const getRoleLabel = (role: string): string => {
     const roleMap: Record<string, string> = {
-      superadmin: "Super Admin",
+      superadmin: "Admin Corporativo",
       administrador: "Administrador",
-      "branch admin": "Branch Admin",
-      "workshop manager": "Workshop Manager",
+      "branch admin": "Admin Sucursal",
+      "workshop manager": "Jefe de Taller",
       mechanic: "Mecánico",
-      "front desk": "Front Desk",
+      "front desk": "Asesor",
     };
     return roleMap[role.toLowerCase()] || role;
+  };
+
+  // Roles disponibles (mostrados en la sección de roles)
+  const AVAILABLE_ROLES = [
+    { value: "superadmin", label: "Admin Corporativo", color: "purple" },
+    { value: "branch admin", label: "Admin Sucursal", color: "blue" },
+    { value: "administrador", label: "Gerente sucursal", color: "green" },
+    { value: "workshop manager", label: "Jefe de Taller", color: "orange" },
+    { value: "mechanic", label: "Mecánico", color: "teal" },
+    { value: "front desk", label: "Asesor", color: "red" },
+  ];
+
+  // Contar usuarios por rol
+  const getUsersCountByRole = (roleValue: string): number => {
+    return users.filter(
+      (user) => user.role?.toLowerCase() === roleValue.toLowerCase()
+    ).length;
+  };
+
+  const roleColors = {
+    purple:
+      "bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400",
+    blue: "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400",
+    green:
+      "bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400",
+    orange:
+      "bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400",
+    teal: "bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400",
+    red: "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400",
   };
 
   return (
@@ -606,14 +650,48 @@ export default function UsuariosRolesPage() {
             )}
           </>
         ) : activeTab === "roles" ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="p-4 rounded-full bg-gray-100 dark:bg-zinc-800 mb-4">
-              <Tag size={48} className="text-gray-400 dark:text-zinc-500" />
+          <div className="space-y-6">
+            {/* Grid de Roles */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {AVAILABLE_ROLES.map((role, index) => {
+                const userCount = getUsersCountByRole(role.value);
+                return (
+                  <div
+                    key={`${role.value}-${index}`}
+                    className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-200 dark:border-zinc-800 overflow-hidden transition-all hover:shadow-md"
+                  >
+                    <div className="p-6">
+                      {/* Header con icono y nombre */}
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`p-3 rounded-lg ${
+                              roleColors[role.color as keyof typeof roleColors]
+                            }`}
+                          >
+                            <Shield size={24} strokeWidth={2} />
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                              {role.label}
+                            </h3>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Contador de usuarios */}
+                      <div>
+                        <p className="text-sm text-gray-600 dark:text-zinc-400">
+                          {userCount === 1
+                            ? "1 usuario"
+                            : `${userCount} usuarios`}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-            <h3 className="card-title mb-2">Funcionalidad en desarrollo</h3>
-            <p className="label">
-              La gestión de roles estará disponible próximamente
-            </p>
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-12 text-center">

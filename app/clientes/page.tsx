@@ -28,6 +28,7 @@ import type {
   VehicleCreateResponse,
   VehicleUpdateRequest,
 } from "@/src/lib/types/vehicle";
+import type { Branch, BranchesResponse } from "@/src/lib/types/branch";
 import ClientFormModal from "./components/ClientFormModal";
 import VehicleFormModal from "./components/VehicleFormModal";
 import Header from "../components/Header";
@@ -53,6 +54,9 @@ export default function ClientesPage() {
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
   const [viewingVehicle, setViewingVehicle] = useState<Vehicle | null>(null);
 
+  // Estados para sucursales
+  const [branches, setBranches] = useState<Branch[]>([]);
+
   // Estados compartidos
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
@@ -76,11 +80,14 @@ export default function ClientesPage() {
       });
 
       if (response.ok && Array.isArray(response.data)) {
-        // Normalizar los clientes para asegurar que tengan id
-        const normalizedClients = response.data.map((client: Client) => ({
-          ...client,
-          id: client.id || client._id,
-        }));
+        // Normalizar los clientes para asegurar que tengan id y zipcode
+        const normalizedClients = response.data.map(
+          (client: Client & { zipCode?: string }) => ({
+            ...client,
+            id: client.id || client._id,
+            zipcode: client.zipcode || client.zipCode || "", // Normalizar zipCode a zipcode
+          })
+        );
 
         setClients(normalizedClients);
         setFilteredClients(normalizedClients);
@@ -140,12 +147,35 @@ export default function ClientesPage() {
     }
   }, []);
 
+  // Cargar sucursales
+  const fetchBranches = useCallback(async () => {
+    try {
+      const response = await apiFetch<BranchesResponse>("/branches", {
+        method: "GET",
+      });
+
+      if (response.ok && Array.isArray(response.data)) {
+        // Normalizar las sucursales para asegurar que tengan id
+        const normalizedBranches = response.data.map(
+          (branch: Branch & { _id?: string }) => ({
+            ...branch,
+            id: branch.id || branch._id || branch.code,
+          })
+        );
+        setBranches(normalizedBranches);
+      }
+    } catch (err) {
+      console.error("Error al cargar sucursales:", err);
+    }
+  }, []);
+
   useEffect(() => {
     if (getAccessToken()) {
       fetchClients();
       fetchVehicles();
+      fetchBranches();
     }
-  }, [fetchClients, fetchVehicles]);
+  }, [fetchClients, fetchVehicles, fetchBranches]);
 
   // Filtrar clientes por nombre, email, taxId, etc.
   useEffect(() => {
@@ -509,6 +539,19 @@ export default function ClientesPage() {
       : "Persona Física";
   };
 
+  // Obtener estado del vehículo desde metadata
+  const getVehicleStatus = (vehicle: Vehicle): string => {
+    try {
+      if (vehicle.metadata) {
+        const metadata = JSON.parse(vehicle.metadata);
+        return metadata.estadoDelVehiculo || "Activo";
+      }
+    } catch {
+      // Si hay error parseando, retornar por defecto
+    }
+    return "Activo";
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-zinc-950 transition-colors duration-300">
       <Sidebar />
@@ -847,6 +890,9 @@ export default function ClientesPage() {
                     <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-zinc-300 uppercase tracking-wider">
                       Odómetro
                     </th>
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-zinc-300 uppercase tracking-wider">
+                      Estado
+                    </th>
                     <th className="px-6 py-3 text-right text-xs font-semibold text-gray-700 dark:text-zinc-300 uppercase tracking-wider">
                       Acciones
                     </th>
@@ -899,6 +945,48 @@ export default function ClientesPage() {
                           {vehicle.odometer.toLocaleString()} km
                         </span>
                       </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {(() => {
+                          const status = getVehicleStatus(vehicle);
+                          const statusConfig: Record<
+                            string,
+                            {
+                              bg: string;
+                              text: string;
+                              darkBg: string;
+                              darkText: string;
+                            }
+                          > = {
+                            Activo: {
+                              bg: "bg-green-100",
+                              text: "text-green-800",
+                              darkBg: "dark:bg-green-900/30",
+                              darkText: "dark:text-green-400",
+                            },
+                            "En Servicio": {
+                              bg: "bg-blue-100",
+                              text: "text-blue-800",
+                              darkBg: "dark:bg-blue-900/30",
+                              darkText: "dark:text-blue-400",
+                            },
+                            "Dado de Baja": {
+                              bg: "bg-red-100",
+                              text: "text-red-800",
+                              darkBg: "dark:bg-red-900/30",
+                              darkText: "dark:text-red-400",
+                            },
+                          };
+                          const config =
+                            statusConfig[status] || statusConfig["Activo"];
+                          return (
+                            <span
+                              className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${config.bg} ${config.text} ${config.darkBg} ${config.darkText}`}
+                            >
+                              {status}
+                            </span>
+                          );
+                        })()}
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex items-center justify-end gap-2">
                           <button
@@ -949,6 +1037,7 @@ export default function ClientesPage() {
           isOpen={isVehicleModalOpen}
           vehicle={editingVehicle}
           clients={clients}
+          branches={branches}
           onClose={() => {
             setIsVehicleModalOpen(false);
             setEditingVehicle(null);
@@ -986,7 +1075,9 @@ export default function ClientesPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-semibold text-gray-500 dark:text-zinc-400">
-                      Nombre
+                      {getClientType(viewingClient) === "Empresa"
+                        ? "Razón Social"
+                        : "Nombre Completo"}
                     </label>
                     <p className="text-sm text-gray-900 dark:text-white mt-1">
                       {viewingClient.name}
@@ -1014,14 +1105,6 @@ export default function ClientesPage() {
                     </label>
                     <p className="text-sm text-gray-900 dark:text-white mt-1">
                       {viewingClient.taxId}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-semibold text-gray-500 dark:text-zinc-400">
-                      Razón Social
-                    </label>
-                    <p className="text-sm text-gray-900 dark:text-white mt-1">
-                      {viewingClient.legalName || "N/A"}
                     </p>
                   </div>
                   <div>
