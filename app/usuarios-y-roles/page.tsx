@@ -320,22 +320,24 @@ export default function UsuariosRolesPage() {
     const roleMap: Record<string, string> = {
       superadmin: "Admin Corporativo",
       administrador: "Administrador",
-      "branch admin": "Admin Sucursal",
-      "workshop manager": "Jefe de Taller",
-      mechanic: "Mecánico",
-      "front desk": "Asesor",
+      gerente: "Gerente",
+      asesor: "Asesor",
+      jefe_mecanico: "Jefe Mecánico",
+      mecanico: "Mecánico",
+      cliente: "Cliente",
     };
     return roleMap[role.toLowerCase()] || role;
   };
 
-  // Roles disponibles (mostrados en la sección de roles)
+  // Roles del backend (NestJS) - tabla de permisos por rol
   const AVAILABLE_ROLES = [
     { value: "superadmin", label: "Admin Corporativo", color: "purple" },
-    { value: "branch admin", label: "Admin Sucursal", color: "blue" },
-    { value: "administrador", label: "Gerente sucursal", color: "green" },
-    { value: "workshop manager", label: "Jefe de Taller", color: "orange" },
-    { value: "mechanic", label: "Mecánico", color: "teal" },
-    { value: "front desk", label: "Asesor", color: "red" },
+    { value: "administrador", label: "Administrador", color: "green" },
+    { value: "gerente", label: "Gerente", color: "blue" },
+    { value: "asesor", label: "Asesor", color: "red" },
+    { value: "jefe_mecanico", label: "Jefe Mecánico", color: "orange" },
+    { value: "mecanico", label: "Mecánico", color: "teal" },
+    { value: "cliente", label: "Cliente", color: "slate" },
   ];
 
   // Contar usuarios por rol
@@ -355,6 +357,8 @@ export default function UsuariosRolesPage() {
       "bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400",
     teal: "bg-teal-100 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400",
     red: "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400",
+    slate:
+      "bg-slate-100 dark:bg-slate-900/30 text-slate-600 dark:text-slate-400",
   };
 
   return (

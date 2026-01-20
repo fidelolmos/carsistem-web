@@ -75,17 +75,29 @@ export async function apiFetch<T>(
 
     if (details && typeof details === "object") {
       const detailsObj = details as {
-        message?: string;
-        error?: string;
+        message?: string | string[];
+        error?: string | { message?: string };
         errors?: unknown;
+        msg?: string;
         [key: string]: unknown;
       };
 
       // Priorizar mensaje específico
-      if (detailsObj.message && typeof detailsObj.message === "string") {
-        errorMessage = detailsObj.message;
-      } else if (detailsObj.error && typeof detailsObj.error === "string") {
-        errorMessage = detailsObj.error;
+      if (detailsObj.message) {
+        if (typeof detailsObj.message === "string") {
+          errorMessage = detailsObj.message;
+        } else if (Array.isArray(detailsObj.message) && detailsObj.message.length > 0) {
+          errorMessage = detailsObj.message.map((m) => String(m)).join(", ");
+        }
+      } else if (detailsObj.msg && typeof detailsObj.msg === "string") {
+        errorMessage = detailsObj.msg;
+      } else if (detailsObj.error) {
+        if (typeof detailsObj.error === "string") {
+          errorMessage = detailsObj.error;
+        } else if (typeof detailsObj.error === "object" && detailsObj.error !== null && "message" in detailsObj.error) {
+          const msg = (detailsObj.error as { message?: string }).message;
+          if (typeof msg === "string") errorMessage = msg;
+        }
       } else if (detailsObj.errors) {
         // Si hay errores de validación, intentar extraerlos
         if (Array.isArray(detailsObj.errors) && detailsObj.errors.length > 0) {
@@ -113,6 +125,12 @@ export async function apiFetch<T>(
       }
     } else if (typeof details === "string" && details.trim()) {
       errorMessage = details;
+    }
+
+    // Fallback para 400 sin mensaje útil (ej. body vacío): dar pistas al usuario
+    if (res.status === 400 && errorMessage === "Error en la solicitud") {
+      errorMessage =
+        "Solicitud incorrecta (400). Revisa que todos los campos sean válidos y que el email o nombre de usuario no estén en uso.";
     }
 
     const err: ApiError = {

@@ -1,0 +1,20 @@
+{
+  "branchIds": {
+    "centro": "centro",
+    "norte": "norte",
+    "sur": "sur"
+  },
+  "labels": {
+    "centro": "Centro",
+    "norte": "Norte",
+    "sur": "Sur"
+  },
+  "data": [
+    { "month": "Ene", "centro": 900000, "norte": 750000, "sur": 650000 },
+    { "month": "Feb", "centro": 950000, "norte": 800000, "sur": 680000 },
+    { "month": "Mar", "centro": 1000000, "norte": 820000, "sur": 700000 },
+    { "month": "Abr", "centro": 1080000, "norte": 880000, "sur": 730000 },
+    { "month": "May", "centro": 1180000, "norte": 940000, "sur": 760000 },
+    { "month": "Jun", "centro": 1300000, "norte": 1000000, "sur": 800000 }
+  ]
+}

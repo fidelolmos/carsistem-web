@@ -1,0 +1,23 @@
+{
+  "branches": [
+    { "id": "centro", "name": "Centro" },
+    { "id": "norte", "name": "Norte" },
+    { "id": "sur", "name": "Sur" }
+  ],
+  "services": [
+    { "id": "mantenimiento", "name": "Mantenimiento" },
+    { "id": "frenos", "name": "Frenos" },
+    { "id": "motor", "name": "Motor" }
+  ],
+  "data": [
+    { "branchId": "centro", "serviceId": "mantenimiento", "percentage": 45 },
+    { "branchId": "centro", "serviceId": "frenos", "percentage": 52 },
+    { "branchId": "centro", "serviceId": "motor", "percentage": 38 },
+    { "branchId": "norte", "serviceId": "mantenimiento", "percentage": 42 },
+    { "branchId": "norte", "serviceId": "frenos", "percentage": 48 },
+    { "branchId": "norte", "serviceId": "motor", "percentage": 35 },
+    { "branchId": "sur", "serviceId": "mantenimiento", "percentage": 40 },
+    { "branchId": "sur", "serviceId": "frenos", "percentage": 46 },
+    { "branchId": "sur", "serviceId": "motor", "percentage": 33 }
+  ]
+}
