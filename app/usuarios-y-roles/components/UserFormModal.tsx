@@ -18,13 +18,15 @@ type UserFormModalProps = {
   loading?: boolean;
 };
 
+/** Roles admitidos por el backend (NestJS). */
 const ROLES = [
   { value: "superadmin", label: "Admin Corporativo" },
   { value: "administrador", label: "Administrador" },
-  { value: "branch admin", label: "Admin Sucursal" },
-  { value: "workshop manager", label: "Jefe de Taller" },
-  { value: "mechanic", label: "Mecánico" },
-  { value: "front desk", label: "Asesor" },
+  { value: "gerente", label: "Gerente" },
+  { value: "asesor", label: "Asesor" },
+  { value: "jefe_mecanico", label: "Jefe Mecánico" },
+  { value: "mecanico", label: "Mecánico" },
+  { value: "cliente", label: "Cliente" },
 ];
 
 const PERMISSIONS = [
@@ -212,7 +214,7 @@ export default function UserFormModal({
         console.log("Datos a actualizar:", updateData);
         await onSubmit(updateData);
       } else {
-        // Crear usuario
+        // Crear usuario: solo los campos del ejemplo POST /users de la documentación
         const createData: UserCreateRequest = {
           email: formData.email.trim().toLowerCase(),
           password: formData.password,
@@ -220,7 +222,6 @@ export default function UserFormModal({
           full_name: formData.full_name.trim(),
           branch_id: formData.branch_id,
           role: formData.role,
-          permissions: formData.permissions,
         };
 
         await onSubmit(createData);
@@ -519,12 +520,19 @@ export default function UserFormModal({
             </div>
           </div>
 
-          {/* Permisos */}
+          {/* Permisos (solo se envían en PATCH; en POST el backend usa los del rol) */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Permisos
-              </h3>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Permisos
+                </h3>
+                {!isEditing && (
+                  <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">
+                    En la creación se usan los permisos del rol. Se pueden personalizar al editar.
+                  </p>
+                )}
+              </div>
               <button
                 type="button"
                 onClick={handleSelectAllPermissions}

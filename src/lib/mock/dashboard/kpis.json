@@ -1,0 +1,53 @@
+{
+  "period": "Último mes",
+  "kpis": [
+    {
+      "id": "citas-mes",
+      "label": "Citas del Mes",
+      "value": 1247,
+      "change": 12.5,
+      "changeLabel": "%",
+      "positiveIsGood": true
+    },
+    {
+      "id": "tasa-conversion",
+      "label": "Tasa de Conversión",
+      "value": "68.3",
+      "change": 3.2,
+      "changeLabel": "%",
+      "positiveIsGood": true
+    },
+    {
+      "id": "ticket-promedio",
+      "label": "Ticket Promedio",
+      "value": "$3,450",
+      "change": 8.1,
+      "changeLabel": "%",
+      "positiveIsGood": true
+    },
+    {
+      "id": "margen-promedio",
+      "label": "Margen Promedio",
+      "value": "42.5",
+      "change": -1.2,
+      "changeLabel": "%",
+      "positiveIsGood": true
+    },
+    {
+      "id": "tiempo-ciclo",
+      "label": "Tiempo Ciclo",
+      "value": "2.8",
+      "change": -0.3,
+      "changeLabel": "días",
+      "positiveIsGood": false
+    },
+    {
+      "id": "utilizacion-tecnicos",
+      "label": "Utilización Técnicos",
+      "value": "78",
+      "change": 5,
+      "changeLabel": "%",
+      "positiveIsGood": true
+    }
+  ]
+}

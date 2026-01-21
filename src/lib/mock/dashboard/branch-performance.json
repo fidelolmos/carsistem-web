@@ -1,0 +1,31 @@
+{
+  "data": [
+    {
+      "branchId": "centro",
+      "branchName": "Carsistem Centro",
+      "branchCode": "C",
+      "appointments": 485,
+      "revenue": 1248500,
+      "margin": 44.2,
+      "conversion": 72
+    },
+    {
+      "branchId": "norte",
+      "branchName": "Carsistem Norte",
+      "branchCode": "N",
+      "appointments": 412,
+      "revenue": 1095800,
+      "margin": 41.8,
+      "conversion": 68
+    },
+    {
+      "branchId": "sur",
+      "branchName": "Carsistem Sur",
+      "branchCode": "S",
+      "appointments": 350,
+      "revenue": 952300,
+      "margin": 41.1,
+      "conversion": 65
+    }
+  ]
+}

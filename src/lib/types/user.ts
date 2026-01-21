@@ -18,6 +18,7 @@ export type User = {
   __v?: number;
 };
 
+/** Payload para POST /users según documentación del backend. No incluir permissions ni status. */
 export type UserCreateRequest = {
   email: string;
   password: string;
@@ -25,7 +26,6 @@ export type UserCreateRequest = {
   full_name: string;
   branch_id: string;
   role: string;
-  permissions: string[];
 };
 
 export type UserUpdateRequest = {

@@ -1,0 +1,9 @@
+{
+  "data": [
+    { "id": "mantenimiento", "name": "Mantenimiento", "percentage": 35 },
+    { "id": "reparacion", "name": "Reparación", "percentage": 28 },
+    { "id": "diagnostico", "name": "Diagnóstico", "percentage": 18 },
+    { "id": "frenos", "name": "Frenos", "percentage": 12 },
+    { "id": "otros", "name": "Otros", "percentage": 7 }
+  ]
+}
