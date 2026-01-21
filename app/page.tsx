@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { getAccessToken } from '@/src/lib/auth';
+import { getAccessToken, clearAuthCookie } from '@/src/lib/auth';
 import {
   getDashboardKpis,
   getRevenueByBranch,
@@ -39,7 +39,10 @@ export default function Home() {
   const [period, setPeriod] = useState('Último mes');
 
   useEffect(() => {
-    if (!getAccessToken()) router.replace('/login');
+    if (!getAccessToken()) {
+      clearAuthCookie();
+      router.replace('/login');
+    }
   }, [router]);
 
   const fetchDashboard = useCallback(async () => {

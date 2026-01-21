@@ -2,24 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { apiFetch } from '@/src/lib/api';
 import { saveTokens } from '@/src/lib/auth';
-
-type LoginResponse = {
-  ok: boolean;
-  message: string;
-  data: {
-    access_token: string;
-    refresh_token: string;
-    user: {
-      id: string;
-      email: string;
-      username: string;
-      role: string;
-      branch_id: string;
-    };
-  };
-};
 
 type ApiError = {
   message: string;
@@ -161,7 +144,7 @@ export default function LoginForm() {
 
     // Validar email requerido
     if (!email || email.trim() === '') {
-      errors.email = 'El usuario es requerido';
+      errors.email = 'El correo electrónico es requerido';
       isValid = false;
     } else {
       // Validar formato de email
@@ -185,6 +168,7 @@ export default function LoginForm() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    e.stopPropagation();
     setError(null);
     setFieldErrors({});
 
@@ -196,20 +180,33 @@ export default function LoginForm() {
     setLoading(true);
 
     try {
-      const res = await apiFetch<LoginResponse>('/auth/login', {
+      // Limpiar cualquier token existente antes de intentar login
+      // Esto evita que apiFetch intente refrescar tokens viejos
+      const { clearTokens } = await import('@/src/lib/auth');
+      clearTokens();
+
+      // Usar fetch directamente para evitar que apiFetch intente refrescar tokens
+      // cuando el login falla con 401
+      const API_URL = process.env.NEXT_PUBLIC_API_URL;
+      const res = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          accept: '*/*',
+        },
         body: JSON.stringify({ email, password }),
       });
 
-      if (!res.ok) throw new Error(res.message || 'Inicio de sesión inválido');
+      const data = await res.json();
+
+      if (!res.ok || !data.ok) {
+        throw new Error(data.message || 'Usuario o contraseña incorrectos');
+      }
 
       saveTokens({
-        accessToken: res.data.access_token,
-        refreshToken: res.data.refresh_token,
+        accessToken: data.data.access_token,
+        refreshToken: data.data.refresh_token,
       });
-
-      // (Opcional) si "remember" es false, podrías guardarlo en sessionStorage en vez de localStorage.
-      // Por ahora lo dejamos igual para avanzar.
 
       router.push('/');
       router.refresh();
@@ -224,7 +221,7 @@ export default function LoginForm() {
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-5">
       <InputWithIcon
-        label="Usuario o Correo Electrónico"
+        label="Correo Electrónico"
         type="email"
         placeholder="usuario@ejemplo.com"
         value={email}

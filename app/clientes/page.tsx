@@ -12,7 +12,7 @@ import {
   Trash2,
   Car,
 } from "lucide-react";
-import { getAccessToken } from "@/src/lib/auth";
+import { getAccessToken, clearAuthCookie } from "@/src/lib/auth";
 import { apiFetch } from "@/src/lib/api";
 import type {
   Client,
@@ -66,6 +66,7 @@ export default function ClientesPage() {
   // Verificar autenticación
   useEffect(() => {
     if (!getAccessToken()) {
+      clearAuthCookie();
       router.replace("/login");
     }
   }, [router]);

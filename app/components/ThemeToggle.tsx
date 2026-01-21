@@ -7,44 +7,25 @@ export default function ThemeToggle() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  // Cargar preferencia de tema al montar
+  // Sincronizar estado del botón con el tema (el script en layout ya aplicó el tema antes del paint)
   useEffect(() => {
-    // Verificar si hay un tema guardado
     const savedTheme = localStorage.getItem('theme');
     const html = document.documentElement;
-    
-    // Si hay un tema guardado, usarlo
-    if (savedTheme === 'dark') {
+    const isDark = html.classList.contains('dark');
+
+    // Por si el script no corrió, aplicar tema
+    if (savedTheme === 'dark' && !isDark) {
       html.classList.add('dark');
-      requestAnimationFrame(() => {
-        setIsDarkMode(true);
-        setMounted(true);
-      });
-    } else if (savedTheme === 'light') {
+      html.style.colorScheme = 'dark';
+    } else if (savedTheme === 'light' && isDark) {
       html.classList.remove('dark');
-      requestAnimationFrame(() => {
-        setIsDarkMode(false);
-        setMounted(true);
-      });
-    } else {
-      // Si no hay tema guardado, verificar preferencia del sistema
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      if (prefersDark) {
-        html.classList.add('dark');
-        localStorage.setItem('theme', 'dark');
-        requestAnimationFrame(() => {
-          setIsDarkMode(true);
-          setMounted(true);
-        });
-      } else {
-        html.classList.remove('dark');
-        localStorage.setItem('theme', 'light');
-        requestAnimationFrame(() => {
-          setIsDarkMode(false);
-          setMounted(true);
-        });
-      }
+      html.style.colorScheme = 'light';
     }
+
+    requestAnimationFrame(() => {
+      setIsDarkMode(isDark);
+      setMounted(true);
+    });
   }, []);
 
   // Toggle dark mode
@@ -55,9 +36,11 @@ export default function ThemeToggle() {
     const html = document.documentElement;
     if (newDarkMode) {
       html.classList.add('dark');
+      html.style.colorScheme = 'dark';
       localStorage.setItem('theme', 'dark');
     } else {
       html.classList.remove('dark');
+      html.style.colorScheme = 'light';
       localStorage.setItem('theme', 'light');
     }
   };
