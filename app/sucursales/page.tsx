@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Search, Plus, Building2 } from "lucide-react";
-import { getAccessToken } from "@/src/lib/auth";
+import { getAccessToken, clearAuthCookie } from "@/src/lib/auth";
 import { apiFetch } from "@/src/lib/api";
 import type {
   Branch,
@@ -40,6 +40,7 @@ export default function SucursalesPage() {
   // Verificar autenticación
   useEffect(() => {
     if (!getAccessToken()) {
+      clearAuthCookie();
       router.replace("/login");
     }
   }, [router]);

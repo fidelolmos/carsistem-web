@@ -1,5 +1,19 @@
 const ACCESS_KEY = "auth_access_token";
 const REFRESH_KEY = "auth_refresh_token";
+const AUTH_COOKIE = "auth";
+const AUTH_COOKIE_MAX_AGE = 2592000; // 30 días
+
+/** Marca en cookie que hay sesión; el middleware la usa para bloquear rutas protegidas antes del primer paint. */
+export function setAuthCookie(): void {
+  if (typeof document === "undefined") return;
+  document.cookie = `${AUTH_COOKIE}=1; path=/; max-age=${AUTH_COOKIE_MAX_AGE}; SameSite=Lax`;
+}
+
+/** Quita la cookie de sesión (p. ej. al hacer logout o cuando el token en localStorage ya no existe). */
+export function clearAuthCookie(): void {
+  if (typeof document === "undefined") return;
+  document.cookie = `${AUTH_COOKIE}=; path=/; max-age=0; SameSite=Lax`;
+}
 
 export function saveTokens(tokens: {
   accessToken: string;
@@ -7,6 +21,7 @@ export function saveTokens(tokens: {
 }) {
   localStorage.setItem(ACCESS_KEY, tokens.accessToken);
   localStorage.setItem(REFRESH_KEY, tokens.refreshToken);
+  setAuthCookie();
 }
 
 export function getAccessToken(): string | null {
@@ -46,7 +61,8 @@ export function getUserIdFromToken(): string | null {
   }
 }
 
-export function clearTokens() {
+export function clearTokens(): void {
   localStorage.removeItem(ACCESS_KEY);
   localStorage.removeItem(REFRESH_KEY);
+  clearAuthCookie();
 }

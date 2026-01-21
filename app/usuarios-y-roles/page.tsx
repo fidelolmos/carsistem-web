@@ -13,7 +13,7 @@ import {
   Lock,
   Shield,
 } from "lucide-react";
-import { getAccessToken } from "@/src/lib/auth";
+import { getAccessToken, clearAuthCookie } from "@/src/lib/auth";
 import { apiFetch } from "@/src/lib/api";
 import type {
   User,
@@ -24,6 +24,7 @@ import type {
 } from "@/src/lib/types/user";
 import type { Branch } from "@/src/lib/types/branch";
 import UserFormModal from "./components/UserFormModal";
+import DeleteUserConfirmModal from "./components/DeleteUserConfirmModal";
 import Header from "../components/Header";
 import Sidebar from "../components/Sidebar";
 
@@ -42,10 +43,13 @@ export default function UsuariosRolesPage() {
   const [formLoading, setFormLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [viewingUser, setViewingUser] = useState<User | null>(null);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // Verificar autenticación
   useEffect(() => {
     if (!getAccessToken()) {
+      clearAuthCookie();
       router.replace("/login");
     }
   }, [router]);
@@ -158,6 +162,52 @@ export default function UsuariosRolesPage() {
     setEditingUser(user);
     setIsModalOpen(true);
     setError(null);
+  };
+
+  // Abrir modal de confirmación para eliminar
+  const handleDeleteClick = (user: User) => {
+    const userId = user.id || user._id;
+    if (!userId) {
+      setError("Error: El usuario no tiene un ID válido para eliminar");
+      return;
+    }
+    setUserToDelete(user);
+    setError(null);
+  };
+
+  // Confirmar eliminación de usuario (DELETE /users/:id)
+  const handleConfirmDelete = async () => {
+    if (!userToDelete) return;
+    const userId = userToDelete.id || userToDelete._id;
+    if (!userId) {
+      setError("Error: El usuario no tiene un ID válido");
+      setUserToDelete(null);
+      return;
+    }
+    try {
+      setDeleteLoading(true);
+      setError(null);
+      await apiFetch<{ ok?: boolean; message?: string; data?: unknown }>(
+        `/users/${userId}`,
+        { method: "DELETE" }
+      );
+      await fetchUsers();
+      setUserToDelete(null);
+    } catch (err) {
+      console.error("Error al eliminar usuario:", err);
+      const errorMessage =
+        err && typeof err === "object" && "message" in err
+          ? String((err as { message: string }).message)
+          : "Error al eliminar el usuario. Por favor, intenta nuevamente.";
+      setError(errorMessage);
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  // Cancelar eliminación
+  const handleCancelDelete = () => {
+    setUserToDelete(null);
   };
 
   // Crear o actualizar usuario
@@ -637,6 +687,7 @@ export default function UsuariosRolesPage() {
                                   <Pencil size={18} />
                                 </button>
                                 <button
+                                  onClick={() => handleDeleteClick(user)}
                                   className="p-2 text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded-lg transition-colors"
                                   aria-label="Eliminar usuario"
                                 >
@@ -721,6 +772,16 @@ export default function UsuariosRolesPage() {
           }}
           onSubmit={handleSubmitUser}
           loading={formLoading}
+        />
+
+        {/* Modal de confirmación para eliminar usuario */}
+        <DeleteUserConfirmModal
+          isOpen={!!userToDelete}
+          userName={userToDelete?.full_name ?? ""}
+          userUsername={userToDelete?.username}
+          onConfirm={handleConfirmDelete}
+          onCancel={handleCancelDelete}
+          isDeleting={deleteLoading}
         />
 
         {/* Modal de Vista */}
